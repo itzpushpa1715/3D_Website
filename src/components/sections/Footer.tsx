@@ -105,7 +105,6 @@ const Footer: React.FC = () => {
               viewport={{ once: true }}
               className="flex items-center justify-center text-neutral-500 dark:text-neutral-500 text-sm"
             >
-              Crafted with passion in Jyvaskyla, Finland
             </motion.div>
           </div>
         </div>
