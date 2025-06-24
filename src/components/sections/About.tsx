@@ -148,11 +148,11 @@ const About: React.FC = () => {
               {/* Quick Stats */}
               <div className="grid grid-cols-2 gap-8 pt-8">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary-400 mb-2">3+</div>
-                  <div className="text-neutral-400 dark:text-neutral-400">Years Experience</div>
+                  <div className="text-3xl font-bold text-primary-400 mb-2">{profile.yearsExperience}</div>
+                  <div className="text-neutral-400 dark:text-neutral-400">Years Learning</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-secondary-400 mb-2">10+</div>
+                  <div className="text-3xl font-bold text-secondary-400 mb-2">{profile.projectsCompleted}</div>
                   <div className="text-neutral-400 dark:text-neutral-400">Projects Completed</div>
                 </div>
               </div>

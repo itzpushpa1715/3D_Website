@@ -52,6 +52,7 @@ const App: React.FC = () => {
   const { isDarkMode } = useStore();
 
   useEffect(() => {
+    // Initialize theme on app load
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
       document.body.classList.add('dark');
