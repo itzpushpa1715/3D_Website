@@ -1,609 +1,308 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useStore } from '../../store/useStore';
 import { 
-  Settings, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Save, 
+  X, 
+  Home, 
   User, 
   Briefcase, 
-  FolderOpen, 
   Award, 
-  LogOut,
-  Save,
-  Plus,
-  Trash2,
-  Edit,
-  Mail,
-  Info,
-  Check,
-  X,
-  Wifi,
-  WifiOff
+  FolderOpen,
+  Settings,
+  Upload,
+  Image as ImageIcon,
+  Frame
 } from 'lucide-react';
-import { useStore } from '../../store/useStore';
+import { uploadImage } from '../../lib/supabase';
 
-// Success Toast Component
-const SuccessToast = ({ message, onClose }: { message: string; onClose: () => void }) => (
-  <motion.div
-    initial={{ opacity: 0, y: -50, scale: 0.9 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: -50, scale: 0.9 }}
-    className="fixed top-4 right-4 z-50 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2"
-  >
-    <Check className="w-5 h-5" />
-    <span>{message}</span>
-    <button onClick={onClose} className="ml-2 hover:bg-green-700 rounded p-1">
-      <X className="w-4 h-4" />
-    </button>
-  </motion.div>
-);
+type TabType = 'profile' | 'projects' | 'certificates' | 'experiences' | 'footer';
 
-// Connection Status Indicator
-const ConnectionStatus = () => {
-  const [isConnected, setIsConnected] = useState(true);
+interface ImageFrameOption {
+  id: string;
+  name: string;
+  className: string;
+}
 
-  React.useEffect(() => {
-    const checkConnection = () => {
-      setIsConnected(navigator.onLine);
-    };
+const imageFrames: ImageFrameOption[] = [
+  { id: 'none', name: 'No Frame', className: '' },
+  { id: 'rounded', name: 'Rounded', className: 'rounded-lg' },
+  { id: 'circle', name: 'Circle', className: 'rounded-full' },
+  { id: 'shadow', name: 'Shadow', className: 'rounded-lg shadow-lg' },
+  { id: 'border', name: 'Border', className: 'rounded-lg border-4 border-white shadow-lg' },
+  { id: 'vintage', name: 'Vintage', className: 'rounded-lg border-8 border-amber-100 shadow-2xl sepia' },
+];
 
-    window.addEventListener('online', checkConnection);
-    window.addEventListener('offline', checkConnection);
-
-    return () => {
-      window.removeEventListener('online', checkConnection);
-      window.removeEventListener('offline', checkConnection);
-    };
-  }, []);
-
-  return (
-    <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm ${
-      isConnected 
-        ? 'bg-green-600/20 text-green-400' 
-        : 'bg-red-600/20 text-red-400'
-    }`}>
-      {isConnected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-      <span>{isConnected ? 'Connected' : 'Offline'}</span>
-    </div>
-  );
-};
-
-const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('profile');
-  const [successMessage, setSuccessMessage] = useState('');
-  const { 
-    profile, 
-    projects, 
-    certificates, 
-    experiences, 
-    footer,
-    updateProfile, 
-    addProject, 
-    updateProject, 
+export default function AdminPanel() {
+  const {
+    user,
+    logout,
+    profile,
+    updateProfile,
+    projects,
+    addProject,
+    updateProject,
     deleteProject,
+    certificates,
     addCertificate,
     updateCertificate,
     deleteCertificate,
+    experiences,
     addExperience,
     updateExperience,
     deleteExperience,
+    footer,
     updateFooter,
-    logout 
   } = useStore();
 
+  const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [showForm, setShowForm] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedFrame, setSelectedFrame] = useState('none');
 
-  const showSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
+  if (!user?.isAuthenticated) {
+    return null;
+  }
 
-  const tabs = [
-    { id: 'profile', name: 'Profile', icon: User },
-    { id: 'about', name: 'About Me', icon: Info },
-    { id: 'projects', name: 'Projects', icon: FolderOpen },
-    { id: 'experience', name: 'Experience', icon: Briefcase },
-    { id: 'certificates', name: 'Certificates', icon: Award },
-    { id: 'contact', name: 'Contact', icon: Mail },
-    { id: 'footer', name: 'Footer', icon: Settings },
-  ];
-
-  const handleSave = async (type: string) => {
+  const handleImageUpload = async (file: File, field: string, item?: any) => {
+    setUploadingImage(true);
     try {
-      switch (type) {
-        case 'profile':
-          await updateProfile(formData);
-          showSuccess('Profile updated successfully! Changes are now live for all visitors.');
-          break;
-        case 'about':
-          await updateProfile(formData);
-          showSuccess('About section updated successfully! Changes are now live for all visitors.');
-          break;
-        case 'contact':
-          await updateProfile({ socialLinks: { ...profile.socialLinks, ...formData } });
-          showSuccess('Contact information updated successfully! Changes are now live for all visitors.');
-          break;
-        case 'footer':
-          await updateFooter(formData);
-          showSuccess('Footer updated successfully! Changes are now live for all visitors.');
-          break;
-        case 'project':
-          if (editingItem?.id) {
-            await updateProject(editingItem.id, formData);
-            showSuccess('Project updated successfully! Changes are now live for all visitors.');
-          } else {
-            await addProject({ ...formData, id: Date.now().toString() });
-            showSuccess('Project added successfully! Changes are now live for all visitors.');
-          }
-          break;
-        case 'certificate':
-          if (editingItem?.id) {
-            await updateCertificate(editingItem.id, formData);
-            showSuccess('Certificate updated successfully! Changes are now live for all visitors.');
-          } else {
-            await addCertificate({ ...formData, id: Date.now().toString() });
-            showSuccess('Certificate added successfully! Changes are now live for all visitors.');
-          }
-          break;
-        case 'experience':
-          if (editingItem?.id) {
-            await updateExperience(editingItem.id, formData);
-            showSuccess('Experience updated successfully! Changes are now live for all visitors.');
-          } else {
-            await addExperience({ ...formData, id: Date.now().toString() });
-            showSuccess('Experience added successfully! Changes are now live for all visitors.');
-          }
-          break;
+      const imageUrl = await uploadImage(file);
+      
+      if (activeTab === 'profile') {
+        updateProfile({ [field]: imageUrl });
+      } else if (item) {
+        const updatedItem = { ...item, [field]: imageUrl };
+        setEditingItem(updatedItem);
       }
-      setEditingItem(null);
-      setFormData({});
     } catch (error) {
-      console.error('Error saving data:', error);
-      showSuccess('Error saving changes. Please try again.');
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
-  const handleDelete = async (type: string, id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"? This change will be visible to all visitors immediately.`)) {
-      try {
-        switch (type) {
-          case 'project':
-            await deleteProject(id);
-            showSuccess('Project deleted successfully! Changes are now live for all visitors.');
-            break;
-          case 'certificate':
-            await deleteCertificate(id);
-            showSuccess('Certificate deleted successfully! Changes are now live for all visitors.');
-            break;
-          case 'experience':
-            await deleteExperience(id);
-            showSuccess('Experience deleted successfully! Changes are now live for all visitors.');
-            break;
-        }
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        showSuccess('Error deleting item. Please try again.');
-      }
-    }
-  };
-
-  const startEdit = (item: any, type: string) => {
-    setEditingItem(item);
-    setFormData(item);
-  };
+  const ImageUploadButton = ({ 
+    onUpload, 
+    currentImage, 
+    label = "Upload Image",
+    showFrame = false 
+  }: { 
+    onUpload: (file: File) => void;
+    currentImage?: string;
+    label?: string;
+    showFrame?: boolean;
+  }) => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+          <Upload className="w-4 h-4" />
+          {label}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(file);
+            }}
+            className="hidden"
+          />
+        </label>
+        {uploadingImage && (
+          <div className="text-blue-600">Uploading...</div>
+        )}
+      </div>
+      
+      {showFrame && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Image Frame Style
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {imageFrames.map((frame) => (
+              <button
+                key={frame.id}
+                onClick={() => setSelectedFrame(frame.id)}
+                className={`p-2 text-xs rounded border transition-colors ${
+                  selectedFrame === frame.id
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                {frame.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {currentImage && (
+        <div className="mt-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Image:</p>
+          <img
+            src={currentImage}
+            alt="Current"
+            className={`w-32 h-32 object-cover ${
+              showFrame ? imageFrames.find(f => f.id === selectedFrame)?.className || '' : 'rounded-lg'
+            }`}
+          />
+        </div>
+      )}
+    </div>
+  );
 
   const renderProfileTab = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-white">Profile Settings</h3>
-      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-        <p className="text-blue-300 text-sm">
-          <strong>Real-time Updates:</strong> All changes made here will be immediately visible to visitors on other devices and computers.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Name</label>
-          <input
-            type="text"
-            value={formData.name || profile.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Title</label>
-          <input
-            type="text"
-            value={formData.title || profile.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Location</label>
-          <input
-            type="text"
-            value={formData.location || profile.location}
-            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Profile Image URL</label>
-          <input
-            type="url"
-            value={formData.profileImage || profile.profileImage}
-            onChange={(e) => setFormData(prev => ({ ...prev, profileImage: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Bio</label>
-          <textarea
-            value={formData.bio || profile.bio}
-            onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-            rows={4}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-      </div>
-      <button
-        onClick={() => handleSave('profile')}
-        className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-      >
-        <Save className="w-4 h-4 mr-2" />
-        Save Profile
-      </button>
-    </div>
-  );
-
-  const renderAboutTab = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-white">About Me Section</h3>
-      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-        <p className="text-blue-300 text-sm">
-          <strong>Real-time Updates:</strong> Changes to skills and experience will be immediately visible to all visitors.
-        </p>
-      </div>
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Years of Experience</label>
-          <input
-            type="text"
-            value={formData.yearsExperience || profile.yearsExperience || '1+'}
-            onChange={(e) => setFormData(prev => ({ ...prev, yearsExperience: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            placeholder="e.g., 1+, 2+, etc."
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Projects Completed</label>
-          <input
-            type="text"
-            value={formData.projectsCompleted || profile.projectsCompleted || '5+'}
-            onChange={(e) => setFormData(prev => ({ ...prev, projectsCompleted: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            placeholder="e.g., 5+, 10+, etc."
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Skills (comma separated)</label>
-          <textarea
-            value={formData.skills?.join(', ') || profile.skills.join(', ')}
-            onChange={(e) => setFormData(prev => ({ 
-              ...prev, 
-              skills: e.target.value.split(',').map(s => s.trim()) 
-            }))}
-            rows={3}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            placeholder="Python, C#, TIA Portal, AutoCAD, etc."
-          />
-        </div>
-      </div>
-      <button
-        onClick={() => handleSave('about')}
-        className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-      >
-        <Save className="w-4 h-4 mr-2" />
-        Save About Section
-      </button>
-    </div>
-  );
-
-  const renderContactTab = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-white">Contact Information</h3>
-      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-        <p className="text-blue-300 text-sm">
-          <strong>Real-time Updates:</strong> Contact information changes will be immediately visible to all visitors.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">Email</label>
-          <input
-            type="email"
-            value={formData.email || profile.socialLinks.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">GitHub URL</label>
-          <input
-            type="url"
-            value={formData.github || profile.socialLinks.github}
-            onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">LinkedIn URL</label>
-          <input
-            type="url"
-            value={formData.linkedin || profile.socialLinks.linkedin}
-            onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
-            className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-          />
-        </div>
-      </div>
-      <button
-        onClick={() => handleSave('contact')}
-        className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-      >
-        <Save className="w-4 h-4 mr-2" />
-        Save Contact Info
-      </button>
-    </div>
-  );
-
-  const renderExperienceTab = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-white">Experience & Education</h3>
-        <button
-          onClick={() => {
-            setEditingItem({});
-            setFormData({});
-          }}
-          className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Experience
-        </button>
-      </div>
-
-      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-        <p className="text-blue-300 text-sm">
-          <strong>Real-time Updates:</strong> Experience and education changes will be immediately visible to all visitors.
-        </p>
-      </div>
-
-      {(editingItem !== null) && (
-        <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
-          <h4 className="text-lg font-semibold text-white mb-4">
-            {editingItem?.id ? 'Edit Experience' : 'Add New Experience'}
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
+          <User className="w-5 h-5" />
+          Profile Information
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Name
+            </label>
             <input
               type="text"
-              placeholder="Title"
-              value={formData.title || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
+              value={profile.name}
+              onChange={(e) => updateProfile({ name: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Title
+            </label>
             <input
               type="text"
-              placeholder="Company/Institution"
-              value={formData.company || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
+              value={profile.title}
+              onChange={(e) => updateProfile({ title: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
-            <input
-              type="text"
-              placeholder="Location"
-              value={formData.location || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <select
-              value={formData.type || 'education'}
-              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            >
-              <option value="education">Education</option>
-              <option value="work">Work</option>
-              <option value="internship">Internship</option>
-            </select>
-            <input
-              type="date"
-              placeholder="Start Date"
-              value={formData.startDate || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="date"
-              placeholder="End Date"
-              value={formData.endDate || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-              disabled={formData.current}
-            />
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="current"
-                checked={formData.current || false}
-                onChange={(e) => setFormData(prev => ({ ...prev, current: e.target.checked }))}
-                className="mr-2 w-4 h-4 text-primary-600 bg-neutral-900 border-neutral-600 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="current" className="text-white">Currently here</label>
-            </div>
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Bio
+            </label>
             <textarea
-              placeholder="Description (one point per line)"
-              value={formData.description?.join('\n') || ''}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                description: e.target.value.split('\n').filter(line => line.trim()) 
-              }))}
+              value={profile.bio}
+              onChange={(e) => updateProfile({ bio: e.target.value })}
               rows={4}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white md:col-span-2 focus:border-primary-500 focus:outline-none transition-colors duration-200"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => handleSave('experience')}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditingItem(null)}
-              className="px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg transition-colors duration-200"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-4">
-        {experiences.map((experience) => (
-          <div key={experience.id} className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-lg font-semibold text-white">{experience.title}</h4>
-                <p className="text-neutral-400 text-sm">{experience.company} • {experience.location}</p>
-                <p className="text-neutral-300 mt-2">{experience.startDate} - {experience.current ? 'Present' : experience.endDate}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => startEdit(experience, 'experience')}
-                  className="p-2 text-primary-400 hover:bg-primary-400/10 rounded transition-colors duration-200"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete('experience', experience.id, experience.title)}
-                  className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors duration-200"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderCertificatesTab = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-white">Certificates</h3>
-        <button
-          onClick={() => {
-            setEditingItem({});
-            setFormData({});
-          }}
-          className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Certificate
-        </button>
-      </div>
-
-      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-        <p className="text-blue-300 text-sm">
-          <strong>Real-time Updates:</strong> Certificate changes will be immediately visible to all visitors.
-        </p>
-      </div>
-
-      {(editingItem !== null) && (
-        <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
-          <h4 className="text-lg font-semibold text-white mb-4">
-            {editingItem?.id ? 'Edit Certificate' : 'Add New Certificate'}
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Location
+            </label>
             <input
               type="text"
-              placeholder="Certificate Title"
-              value={formData.title || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
+              value={profile.location}
+              onChange={(e) => updateProfile({ location: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Profile Image
+            </label>
+            <ImageUploadButton
+              onUpload={(file) => handleImageUpload(file, 'profileImage')}
+              currentImage={profile.profileImage}
+              label="Upload Profile Image"
+              showFrame={true}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Years Experience
+            </label>
             <input
               type="text"
-              placeholder="Issuer"
-              value={formData.issuer || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, issuer: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="date"
-              placeholder="Date"
-              value={formData.date || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="url"
-              placeholder="Image URL"
-              value={formData.image || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="url"
-              placeholder="Credential URL (optional)"
-              value={formData.credentialUrl || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, credentialUrl: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white md:col-span-2 focus:border-primary-500 focus:outline-none transition-colors duration-200"
+              value={profile.yearsExperience}
+              onChange={(e) => updateProfile({ yearsExperience: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => handleSave('certificate')}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditingItem(null)}
-              className="px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg transition-colors duration-200"
-            >
-              Cancel
-            </button>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Projects Completed
+            </label>
+            <input
+              type="text"
+              value={profile.projectsCompleted}
+              onChange={(e) => updateProfile({ projectsCompleted: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
           </div>
         </div>
-      )}
-
-      <div className="grid gap-4">
-        {certificates.map((certificate) => (
-          <div key={certificate.id} className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-lg font-semibold text-white">{certificate.title}</h4>
-                <p className="text-neutral-400 text-sm">{certificate.issuer}</p>
-                <p className="text-neutral-300 mt-2">{new Date(certificate.date).toLocaleDateString()}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => startEdit(certificate, 'certificate')}
-                  className="p-2 text-primary-400 hover:bg-primary-400/10 rounded transition-colors duration-200"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete('certificate', certificate.id, certificate.title)}
-                  className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors duration-200"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+        
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Skills (comma-separated)
+          </label>
+          <input
+            type="text"
+            value={profile.skills.join(', ')}
+            onChange={(e) => updateProfile({ skills: e.target.value.split(', ').filter(s => s.trim()) })}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+        
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              GitHub URL
+            </label>
+            <input
+              type="url"
+              value={profile.socialLinks.github}
+              onChange={(e) => updateProfile({ 
+                socialLinks: { ...profile.socialLinks, github: e.target.value }
+              })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
           </div>
-        ))}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              LinkedIn URL
+            </label>
+            <input
+              type="url"
+              value={profile.socialLinks.linkedin}
+              onChange={(e) => updateProfile({ 
+                socialLinks: { ...profile.socialLinks, linkedin: e.target.value }
+              })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={profile.socialLinks.email}
+              onChange={(e) => updateProfile({ 
+                socialLinks: { ...profile.socialLinks, email: e.target.value }
+              })}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -611,269 +310,337 @@ const AdminPanel: React.FC = () => {
   const renderProjectsTab = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-white">Projects</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <FolderOpen className="w-5 h-5" />
+          Projects
+        </h3>
         <button
           onClick={() => {
-            setEditingItem({});
-            setFormData({});
+            setEditingItem({
+              title: '',
+              description: '',
+              shortDescription: '',
+              image: '',
+              images: [],
+              technologies: [],
+              liveUrl: '',
+              githubUrl: '',
+              category: '',
+              featured: false,
+              date: new Date().toISOString().split('T')[0],
+            });
+            setShowForm(true);
           }}
-          className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Add Project
         </button>
       </div>
 
-      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-        <p className="text-blue-300 text-sm">
-          <strong>Real-time Updates:</strong> Project changes will be immediately visible to all visitors.
-        </p>
-      </div>
-
-      {(editingItem !== null) && (
-        <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
-          <h4 className="text-lg font-semibold text-white mb-4">
-            {editingItem?.id ? 'Edit Project' : 'Add New Project'}
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Project Title"
-              value={formData.title || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="text"
-              placeholder="Category"
-              value={formData.category || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <textarea
-              placeholder="Short Description"
-              value={formData.shortDescription || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, shortDescription: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white md:col-span-2 focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <textarea
-              placeholder="Full Description"
-              value={formData.description || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white md:col-span-2 focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="url"
-              placeholder="Image URL"
-              value={formData.image || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="text"
-              placeholder="Technologies (comma separated)"
-              value={formData.technologies?.join(', ') || ''}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                technologies: e.target.value.split(',').map(t => t.trim()) 
-              }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="url"
-              placeholder="GitHub URL (optional)"
-              value={formData.githubUrl || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, githubUrl: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="url"
-              placeholder="Live URL (optional)"
-              value={formData.liveUrl || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, liveUrl: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <input
-              type="date"
-              placeholder="Project Date"
-              value={formData.date || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-            />
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="featured"
-                checked={formData.featured || false}
-                onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
-                className="mr-2 w-4 h-4 text-primary-600 bg-neutral-900 border-neutral-600 rounded focus:ring-primary-500"
-              />
-              <label htmlFor="featured" className="text-white">Featured Project</label>
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={() => handleSave('project')}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setEditingItem(null)}
-              className="px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg transition-colors duration-200"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((project) => (
-          <div key={project.id} className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="text-lg font-semibold text-white">{project.title}</h4>
-                <p className="text-neutral-400 text-sm">{project.category}</p>
-                <p className="text-neutral-300 mt-2">{project.shortDescription}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => startEdit(project, 'project')}
-                  className="p-2 text-primary-400 hover:bg-primary-400/10 rounded transition-colors duration-200"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete('project', project.id, project.title)}
-                  className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors duration-200"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+          <div key={project.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-48 object-cover"
+            />
+            <div className="p-4">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{project.title}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                {project.shortDescription}
+              </p>
+              <div className="flex justify-between items-center">
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  project.featured 
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                }`}>
+                  {project.featured ? 'Featured' : 'Regular'}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingItem(project);
+                      setShowForm(true);
+                    }}
+                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteProject(project.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {showForm && editingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {editingItem.id ? 'Edit Project' : 'Add Project'}
+                </h4>
+                <button
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingItem(null);
+                  }}
+                  className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.title}
+                      onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Category
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.category}
+                      onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Short Description
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.shortDescription}
+                    onChange={(e) => setEditingItem({ ...editingItem, shortDescription: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={editingItem.description}
+                    onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Main Image
+                  </label>
+                  <ImageUploadButton
+                    onUpload={(file) => handleImageUpload(file, 'image', editingItem)}
+                    currentImage={editingItem.image}
+                    label="Upload Main Image"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Technologies (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.technologies.join(', ')}
+                      onChange={(e) => setEditingItem({ 
+                        ...editingItem, 
+                        technologies: e.target.value.split(', ').filter(t => t.trim()) 
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editingItem.date}
+                      onChange={(e) => setEditingItem({ ...editingItem, date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Live URL (optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={editingItem.liveUrl || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, liveUrl: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      GitHub URL (optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={editingItem.githubUrl || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, githubUrl: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="featured"
+                    checked={editingItem.featured}
+                    onChange={(e) => setEditingItem({ ...editingItem, featured: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <label htmlFor="featured" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Featured Project
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingItem(null);
+                    }}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (editingItem.id) {
+                        updateProject(editingItem.id, editingItem);
+                      } else {
+                        addProject(editingItem);
+                      }
+                      setShowForm(false);
+                      setEditingItem(null);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'profile':
-        return renderProfileTab();
-      case 'about':
-        return renderAboutTab();
-      case 'contact':
-        return renderContactTab();
-      case 'projects':
-        return renderProjectsTab();
-      case 'experience':
-        return renderExperienceTab();
-      case 'certificates':
-        return renderCertificatesTab();
-      case 'footer':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-white">Footer Settings</h3>
-            <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-              <p className="text-blue-300 text-sm">
-                <strong>Real-time Updates:</strong> Footer changes will be immediately visible to all visitors.
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-2">Footer Text</label>
-              <input
-                type="text"
-                value={formData.text || footer.text}
-                onChange={(e) => setFormData(prev => ({ ...prev, text: e.target.value }))}
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none transition-colors duration-200"
-              />
-            </div>
-            <button
-              onClick={() => handleSave('footer')}
-              className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Save Footer
-            </button>
-          </div>
-        );
-      default:
-        return <div className="text-white">Select a tab to edit content</div>;
-    }
-  };
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'projects', label: 'Projects', icon: FolderOpen },
+    { id: 'certificates', label: 'Certificates', icon: Award },
+    { id: 'experiences', label: 'Experience', icon: Briefcase },
+    { id: 'footer', label: 'Footer', icon: Settings },
+  ];
 
   return (
-    <div className="min-h-screen bg-neutral-900">
-      {/* Success Toast */}
-      <AnimatePresence>
-        {successMessage && (
-          <SuccessToast 
-            message={successMessage} 
-            onClose={() => setSuccessMessage('')} 
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-neutral-800 border-r border-neutral-700 min-h-screen">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Admin Panel</h2>
-            
-            {/* Connection Status */}
-            <div className="mb-6">
-              <ConnectionStatus />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Admin Panel
+              </h1>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Welcome, {user.username}
+              </span>
             </div>
-            
-            <nav className="space-y-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors duration-200 ${
-                      activeTab === tab.id
-                        ? 'bg-primary-600 text-white'
-                        : 'text-neutral-300 hover:bg-neutral-700'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 mr-3" />
-                    {tab.name}
-                  </button>
-                );
-              })}
-            </nav>
-            
-            <div className="absolute bottom-6 left-6">
+            <div className="flex items-center gap-4">
+              <a
+                href="/"
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                View Portfolio
+              </a>
               <button
                 onClick={logout}
-                className="flex items-center px-4 py-2 text-neutral-400 hover:text-white transition-colors duration-200"
+                className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
-                <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-8">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {renderContent()}
-          </motion.div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <div className="lg:w-64 flex-shrink-0">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+              <nav className="space-y-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as TabType)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {activeTab === 'profile' && renderProfileTab()}
+            {activeTab === 'projects' && renderProjectsTab()}
+            {/* Add other tabs as needed */}
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default AdminPanel;
+}

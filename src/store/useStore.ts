@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface User {
   id: string;
@@ -264,56 +264,64 @@ export const useStore = create<Store>()(
 
       // Real-time subscription setup
       setupRealtimeSubscription: () => {
-        if (realtimeSubscription) {
-          return; // Already subscribed
+        if (!isSupabaseConfigured() || realtimeSubscription) {
+          return; // Skip if not configured or already subscribed
         }
 
-        realtimeSubscription = supabase
-          .channel('portfolio_changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'portfolio_data',
-            },
-            (payload) => {
-              console.log('Real-time update received:', payload);
-              
-              // Reload data when changes are detected
-              if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-                const { data_type, content } = payload.new;
+        try {
+          realtimeSubscription = supabase
+            .channel('portfolio_changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'portfolio_data',
+              },
+              (payload) => {
+                console.log('Real-time update received:', payload);
                 
-                // Update the specific data type in the store
-                switch (data_type) {
-                  case 'profile':
-                    set({ profile: content });
-                    break;
-                  case 'projects':
-                    set({ projects: content });
-                    break;
-                  case 'certificates':
-                    set({ certificates: content });
-                    break;
-                  case 'experiences':
-                    set({ experiences: content });
-                    break;
-                  case 'footer':
-                    set({ footer: content });
-                    break;
+                // Reload data when changes are detected
+                if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+                  const { data_type, content } = payload.new;
+                  
+                  // Update the specific data type in the store
+                  switch (data_type) {
+                    case 'profile':
+                      set({ profile: content });
+                      break;
+                    case 'projects':
+                      set({ projects: content });
+                      break;
+                    case 'certificates':
+                      set({ certificates: content });
+                      break;
+                    case 'experiences':
+                      set({ experiences: content });
+                      break;
+                    case 'footer':
+                      set({ footer: content });
+                      break;
+                  }
                 }
               }
-            }
-          )
-          .subscribe((status) => {
-            console.log('Realtime subscription status:', status);
-          });
+            )
+            .subscribe((status) => {
+              console.log('Realtime subscription status:', status);
+            });
+        } catch (error) {
+          console.error('Error setting up realtime subscription:', error);
+        }
       },
 
       cleanupRealtimeSubscription: () => {
         if (realtimeSubscription) {
-          supabase.removeChannel(realtimeSubscription);
-          realtimeSubscription = null;
+          try {
+            supabase.removeChannel(realtimeSubscription);
+            realtimeSubscription = null;
+          } catch (error) {
+            console.error('Error cleaning up subscription:', error);
+          }
         }
       },
 
@@ -321,6 +329,21 @@ export const useStore = create<Store>()(
       isLoading: false,
       loadData: async () => {
         set({ isLoading: true });
+        
+        // If Supabase is not configured, use default data
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured, using default data');
+          set({
+            profile: defaultData.profile,
+            projects: defaultData.projects,
+            certificates: defaultData.certificates,
+            experiences: defaultData.experiences,
+            footer: defaultData.footer,
+            isLoading: false,
+          });
+          return;
+        }
+
         try {
           const { data, error } = await supabase
             .from('portfolio_data')
@@ -381,6 +404,12 @@ export const useStore = create<Store>()(
       },
 
       saveToDatabase: async (dataType: string, content: any) => {
+        // If Supabase is not configured, just update local state
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured, data saved locally only');
+          return;
+        }
+
         try {
           const { error } = await supabase
             .from('portfolio_data')
@@ -400,7 +429,8 @@ export const useStore = create<Store>()(
           console.log(`Successfully saved ${dataType} to database`);
         } catch (error) {
           console.error('Error saving to database:', error);
-          throw error;
+          // Don't throw error to prevent UI from breaking
+          console.log('Data saved locally only');
         }
       },
 
