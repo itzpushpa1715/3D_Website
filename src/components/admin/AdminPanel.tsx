@@ -15,10 +15,11 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { uploadImage, deleteImage } from '../../lib/supabase';
+import { uploadImage, deleteImage, isSupabaseConfigured } from '../../lib/supabase';
 
 const AdminPanel: React.FC = () => {
   const { 
@@ -120,20 +121,32 @@ const AdminPanel: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      showMessage('Supabase is not configured. Image uploads are not available. Please connect to Supabase to enable image uploads.', 'error');
+      return;
+    }
+
     setIsLoading(true);
     try {
       showMessage('Uploading image...', 'success');
       
       const imageUrl = await handleImageUpload(file);
-      const updatedProfile = { ...profileForm, profileImage: imageUrl };
       
-      // Update form state immediately
-      setProfileForm(updatedProfile);
-      
-      // Save to database and update store
-      await updateProfile(updatedProfile);
-      
-      showMessage('Profile image updated successfully!', 'success');
+      // Only update if we got a valid persistent URL (not a blob URL)
+      if (imageUrl && !imageUrl.startsWith('blob:')) {
+        const updatedProfile = { ...profileForm, profileImage: imageUrl };
+        
+        // Update form state immediately
+        setProfileForm(updatedProfile);
+        
+        // Save to database and update store
+        await updateProfile(updatedProfile);
+        
+        showMessage('Profile image updated successfully!', 'success');
+      } else {
+        showMessage('Failed to upload image. Please try again.', 'error');
+      }
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -362,6 +375,20 @@ const AdminPanel: React.FC = () => {
                 {/* Profile Image */}
                 <div className="bg-neutral-800 rounded-xl p-6">
                   <h3 className="text-xl font-semibold text-white mb-4">Profile Image</h3>
+                  
+                  {/* Supabase Configuration Warning */}
+                  {!isSupabaseConfigured() && (
+                    <div className="mb-4 p-4 bg-yellow-900/50 border border-yellow-600 rounded-lg flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-yellow-200 text-sm font-medium">Supabase Not Configured</p>
+                        <p className="text-yellow-300 text-sm mt-1">
+                          Image uploads are disabled. Please connect to Supabase to enable image upload functionality.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center space-x-6">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary-500">
                       <img
@@ -387,14 +414,17 @@ const AdminPanel: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={isLoading}
+                        disabled={isLoading || !isSupabaseConfigured()}
                         className="flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-600 text-white rounded-lg transition-colors duration-200"
                       >
                         <Upload className="w-4 h-4 mr-2" />
                         {isLoading ? 'Uploading...' : 'Upload New Image'}
                       </button>
                       <p className="text-sm text-neutral-400 mt-2">
-                        Changes will be visible immediately after upload
+                        {isSupabaseConfigured() 
+                          ? 'Changes will be visible immediately after upload'
+                          : 'Image upload requires Supabase configuration'
+                        }
                       </p>
                     </div>
                   </div>
