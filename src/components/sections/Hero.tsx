@@ -55,6 +55,11 @@ const Hero: React.FC = () => {
     }
   };
 
+  // Create a unique image URL with timestamp to force cache refresh
+  const profileImageWithTimestamp = profile.profileImage.includes('?') 
+    ? profile.profileImage 
+    : `${profile.profileImage}?t=${imageKey}`;
+
   return (
     <section id="home" className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900">
       {/* 3D Background */}
@@ -78,13 +83,13 @@ const Hero: React.FC = () => {
             >
               <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-primary-500 shadow-lg shadow-primary-500/25 animate-glow">
                 <img
-                  key={imageKey} // Force re-render when image changes
-                  src={profile.profileImage}
+                  key={`hero-${imageKey}`} // Force re-render when image changes
+                  src={profileImageWithTimestamp}
                   alt={profile.name}
                   className="w-full h-full object-cover"
-                  onLoad={() => console.log('Hero image loaded:', profile.profileImage)}
+                  onLoad={() => console.log('Hero image loaded:', profileImageWithTimestamp)}
                   onError={(e) => {
-                    console.error('Hero image failed to load:', profile.profileImage);
+                    console.error('Hero image failed to load:', profileImageWithTimestamp);
                     // Fallback to default image
                     (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
                   }}

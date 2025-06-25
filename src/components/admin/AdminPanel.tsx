@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -14,7 +14,8 @@ import {
   Edit,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  RefreshCw
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { uploadImage, deleteImage } from '../../lib/supabase';
@@ -37,16 +38,23 @@ const AdminPanel: React.FC = () => {
     updateExperience,
     deleteExperience,
     updateFooter,
-    logout 
+    logout,
+    loadData
   } = useStore();
 
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile form state
   const [profileForm, setProfileForm] = useState(profile);
+
+  // Update profile form when profile changes from store
+  useEffect(() => {
+    setProfileForm(profile);
+  }, [profile]);
 
   // Project form state
   const [projectForm, setProjectForm] = useState({
@@ -94,7 +102,8 @@ const AdminPanel: React.FC = () => {
 
   const showMessage = (msg: string, type: 'success' | 'error' = 'success') => {
     setMessage(msg);
-    setTimeout(() => setMessage(''), 3000);
+    setMessageType(type);
+    setTimeout(() => setMessage(''), 5000);
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
@@ -113,20 +122,28 @@ const AdminPanel: React.FC = () => {
 
     setIsLoading(true);
     try {
+      showMessage('Uploading image...', 'success');
+      
       const imageUrl = await handleImageUpload(file);
       const updatedProfile = { ...profileForm, profileImage: imageUrl };
+      
+      // Update form state immediately
       setProfileForm(updatedProfile);
       
-      // Save immediately to database and trigger real-time update
+      // Save to database
       await updateProfile(updatedProfile);
-      showMessage('Profile image updated successfully!');
       
-      // Force a page refresh to ensure the image is updated everywhere
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      showMessage('Profile image updated successfully! Changes will be visible shortly.', 'success');
+      
+      // Refresh data after a short delay to ensure database is updated
+      setTimeout(async () => {
+        await loadData();
+        showMessage('Profile updated and synchronized!', 'success');
+      }, 2000);
+      
     } catch (error) {
-      showMessage('Error uploading image', 'error');
+      console.error('Upload error:', error);
+      showMessage('Error uploading image. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -138,14 +155,27 @@ const AdminPanel: React.FC = () => {
     
     try {
       await updateProfile(profileForm);
-      showMessage('Profile updated successfully!');
+      showMessage('Profile updated successfully!', 'success');
       
-      // Force a small delay and refresh to ensure changes are visible
-      setTimeout(() => {
-        window.location.reload();
+      // Refresh data to ensure consistency
+      setTimeout(async () => {
+        await loadData();
       }, 1000);
     } catch (error) {
-      showMessage('Error updating profile', 'error');
+      console.error('Profile update error:', error);
+      showMessage('Error updating profile. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefreshData = async () => {
+    setIsLoading(true);
+    try {
+      await loadData();
+      showMessage('Data refreshed successfully!', 'success');
+    } catch (error) {
+      showMessage('Error refreshing data', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -275,13 +305,23 @@ const AdminPanel: React.FC = () => {
       <div className="bg-neutral-800 border-b border-neutral-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-          <button
-            onClick={logout}
-            className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handleRefreshData}
+              disabled={isLoading}
+              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 text-white rounded-lg transition-colors duration-200"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh Data
+            </button>
+            <button
+              onClick={logout}
+              className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
@@ -290,7 +330,9 @@ const AdminPanel: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-green-600 text-white px-6 py-3 text-center"
+          className={`px-6 py-3 text-center text-white ${
+            messageType === 'success' ? 'bg-green-600' : 'bg-red-600'
+          }`}
         >
           {message}
         </motion.div>
@@ -337,7 +379,13 @@ const AdminPanel: React.FC = () => {
                         src={profileForm.profileImage}
                         alt="Profile"
                         className="w-full h-full object-cover"
-                        key={profileForm.profileImage} // Force re-render when image changes
+                        key={`${profileForm.profileImage}-${Date.now()}`} // Force re-render
+                        onLoad={() => console.log('Admin profile image loaded:', profileForm.profileImage)}
+                        onError={(e) => {
+                          console.error('Admin profile image failed to load:', profileForm.profileImage);
+                          // Fallback to default image
+                          (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
+                        }}
                       />
                     </div>
                     <div>
@@ -357,6 +405,9 @@ const AdminPanel: React.FC = () => {
                         <Upload className="w-4 h-4 mr-2" />
                         {isLoading ? 'Uploading...' : 'Upload New Image'}
                       </button>
+                      <p className="text-sm text-neutral-400 mt-2">
+                        Changes may take a moment to appear across all devices
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -635,7 +686,7 @@ const AdminPanel: React.FC = () => {
                       <input
                         type="url"
                         value={projectForm.githubUrl}
-                        onChange={(e) => setProjectForm(prev => ({ ...prev, githubUrl: e.target.value }))}
+                        onChange={(e) => setProjectForm(rev => ({ ...prev, githubUrl: e.target.value }))}
                         className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
                       />
                     </div>
