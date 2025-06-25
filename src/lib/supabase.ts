@@ -10,7 +10,9 @@ export const isSupabaseConfigured = () => {
          supabaseUrl !== 'https://your-project.supabase.co' && 
          supabaseAnonKey !== 'your-anon-key' &&
          !supabaseUrl.includes('your-project') &&
-         !supabaseAnonKey.includes('your-anon');
+         !supabaseAnonKey.includes('your-anon') &&
+         supabaseUrl.startsWith('https://') &&
+         supabaseAnonKey.length > 20; // Basic validation for key length
 };
 
 // Create client with fallback values
@@ -49,6 +51,25 @@ export interface Database {
     };
   };
 }
+
+// Test Supabase connection
+export const testSupabaseConnection = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured()) {
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('portfolio_data')
+      .select('id')
+      .limit(1);
+    
+    return !error;
+  } catch (error) {
+    console.error('Supabase connection test failed:', error);
+    return false;
+  }
+};
 
 // Utility function to handle image uploads
 export const uploadImage = async (file: File): Promise<string> => {
