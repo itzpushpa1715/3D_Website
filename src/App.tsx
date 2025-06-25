@@ -10,10 +10,15 @@ import Contact from './components/sections/Contact';
 import Footer from './components/sections/Footer';
 import Login from './components/admin/Login';
 import AdminPanel from './components/admin/AdminPanel';
+import LoadingScreen from './components/LoadingScreen';
 import { useStore } from './store/useStore';
 
 const HomePage: React.FC = () => {
-  const { isDarkMode } = useStore();
+  const { isDarkMode, isLoading } = useStore();
+  
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
   
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -49,7 +54,7 @@ const AdminRoute: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const { isDarkMode } = useStore();
+  const { isDarkMode, loadData } = useStore();
 
   useEffect(() => {
     // Initialize theme on app load
@@ -60,7 +65,10 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
       document.body.classList.remove('dark');
     }
-  }, [isDarkMode]);
+
+    // Load data from database
+    loadData();
+  }, [isDarkMode, loadData]);
 
   return (
     <Router>
