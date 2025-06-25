@@ -63,21 +63,21 @@ interface Store {
 
   // Projects
   projects: Project[];
-  addProject: (project: Omit<Project, 'id'>) => void;
-  updateProject: (id: string, project: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  addProject: (project: Omit<Project, 'id'>) => Promise<void>;
+  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
 
   // Certificates
   certificates: Certificate[];
-  addCertificate: (certificate: Omit<Certificate, 'id'>) => void;
-  updateCertificate: (id: string, certificate: Partial<Certificate>) => void;
-  deleteCertificate: (id: string) => void;
+  addCertificate: (certificate: Omit<Certificate, 'id'>) => Promise<void>;
+  updateCertificate: (id: string, certificate: Partial<Certificate>) => Promise<void>;
+  deleteCertificate: (id: string) => Promise<void>;
 
   // Experience
   experiences: Experience[];
-  addExperience: (experience: Omit<Experience, 'id'>) => void;
-  updateExperience: (id: string, experience: Partial<Experience>) => void;
-  deleteExperience: (id: string) => void;
+  addExperience: (experience: Omit<Experience, 'id'>) => Promise<void>;
+  updateExperience: (id: string, experience: Partial<Experience>) => Promise<void>;
+  deleteExperience: (id: string) => Promise<void>;
 
   // Profile
   profile: {
@@ -95,14 +95,14 @@ interface Store {
       email: string;
     };
   };
-  updateProfile: (profile: Partial<Store['profile']>) => void;
+  updateProfile: (profile: Partial<Store['profile']>) => Promise<void>;
 
   // Footer
   footer: {
     text: string;
     links: { name: string; url: string }[];
   };
-  updateFooter: (footer: Partial<Store['footer']>) => void;
+  updateFooter: (footer: Partial<Store['footer']>) => Promise<void>;
 }
 
 const defaultData = {

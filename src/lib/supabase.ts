@@ -59,12 +59,33 @@ export const uploadImage = async (file: File): Promise<string> => {
 
   try {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `images/${fileName}`;
+
+    // First, try to create the bucket if it doesn't exist
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const portfolioBucket = buckets?.find(bucket => bucket.name === 'portfolio-images');
+    
+    if (!portfolioBucket) {
+      const { error: bucketError } = await supabase.storage.createBucket('portfolio-images', {
+        public: true,
+        allowedMimeTypes: ['image/*'],
+        fileSizeLimit: 5242880 // 5MB
+      });
+      
+      if (bucketError) {
+        console.error('Error creating bucket:', bucketError);
+        // Fall back to object URL if bucket creation fails
+        return URL.createObjectURL(file);
+      }
+    }
 
     const { error: uploadError } = await supabase.storage
       .from('portfolio-images')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -79,5 +100,33 @@ export const uploadImage = async (file: File): Promise<string> => {
   } catch (error) {
     console.error('Error uploading image:', error);
     return URL.createObjectURL(file);
+  }
+};
+
+// Utility function to delete images
+export const deleteImage = async (imageUrl: string): Promise<boolean> => {
+  if (!isSupabaseConfigured() || !imageUrl.includes('supabase')) {
+    return true; // Can't delete local object URLs, but that's fine
+  }
+
+  try {
+    // Extract file path from URL
+    const urlParts = imageUrl.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    const filePath = `images/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from('portfolio-images')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Error deleting image:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    return false;
   }
 };
