@@ -44,6 +44,15 @@ interface Experience {
   type: 'work' | 'education' | 'internship';
 }
 
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+}
+
 interface Store {
   // Theme
   isDarkMode: boolean;
@@ -53,6 +62,7 @@ interface Store {
   user: User | null;
   login: (username: string, password: string) => boolean;
   logout: () => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 
   // Data loading
   isLoading: boolean;
@@ -79,6 +89,10 @@ interface Store {
   addExperience: (experience: Omit<Experience, 'id'>) => Promise<void>;
   updateExperience: (id: string, experience: Partial<Experience>) => Promise<void>;
   deleteExperience: (id: string) => Promise<void>;
+
+  // Contact Messages
+  contactMessages: ContactMessage[];
+  addContactMessage: (message: Omit<ContactMessage, 'id' | 'date'>) => Promise<void>;
 
   // Profile
   profile: {
@@ -218,6 +232,7 @@ const defaultData = {
       type: 'internship',
     },
   ],
+  contactMessages: [],
   footer: {
     text: '© 2024 Pushpa Koirala. Crafted with passion in Jyvaskyla, Finland.',
     links: [
@@ -230,6 +245,12 @@ const defaultData = {
 // Global variable to store the subscription
 let realtimeSubscription: any = null;
 let isUpdatingFromRealtime = false;
+
+// Store admin credentials
+let adminCredentials = {
+  username: 'admin',
+  password: 'pushpa2024'
+};
 
 export const useStore = create<Store>()(
   persist(
@@ -254,8 +275,7 @@ export const useStore = create<Store>()(
       // Auth
       user: null,
       login: (username: string, password: string) => {
-        // Simple authentication - in production, use proper auth
-        if (username === 'admin' && password === 'pushpa2024') {
+        if (username === adminCredentials.username && password === adminCredentials.password) {
           const user = { id: '1', username, isAuthenticated: true };
           set({ user });
           return true;
@@ -263,6 +283,14 @@ export const useStore = create<Store>()(
         return false;
       },
       logout: () => set({ user: null }),
+      changePassword: async (currentPassword: string, newPassword: string) => {
+        if (currentPassword === adminCredentials.password) {
+          adminCredentials.password = newPassword;
+          // In a real app, you'd save this to a secure backend
+          return true;
+        }
+        return false;
+      },
 
       // Real-time subscription setup
       setupRealtimeSubscription: () => {
@@ -318,6 +346,9 @@ export const useStore = create<Store>()(
                       case 'experiences':
                         set({ experiences: content, lastUpdateTime: payloadTime });
                         break;
+                      case 'contactMessages':
+                        set({ contactMessages: content, lastUpdateTime: payloadTime });
+                        break;
                       case 'footer':
                         set({ footer: content, lastUpdateTime: payloadTime });
                         break;
@@ -363,6 +394,7 @@ export const useStore = create<Store>()(
             projects: defaultData.projects,
             certificates: defaultData.certificates,
             experiences: defaultData.experiences,
+            contactMessages: defaultData.contactMessages,
             footer: defaultData.footer,
             isLoading: false,
             lastUpdateTime: Date.now(),
@@ -384,6 +416,7 @@ export const useStore = create<Store>()(
               projects: defaultData.projects,
               certificates: defaultData.certificates,
               experiences: defaultData.experiences,
+              contactMessages: defaultData.contactMessages,
               footer: defaultData.footer,
               lastUpdateTime: Date.now(),
             });
@@ -415,6 +448,7 @@ export const useStore = create<Store>()(
               projects: portfolioData.projects || defaultData.projects,
               certificates: portfolioData.certificates || defaultData.certificates,
               experiences: portfolioData.experiences || defaultData.experiences,
+              contactMessages: portfolioData.contactMessages || defaultData.contactMessages,
               footer: portfolioData.footer || defaultData.footer,
               lastUpdateTime: latestUpdateTime,
             });
@@ -425,6 +459,7 @@ export const useStore = create<Store>()(
               projects: defaultData.projects,
               certificates: defaultData.certificates,
               experiences: defaultData.experiences,
+              contactMessages: defaultData.contactMessages,
               footer: defaultData.footer,
               lastUpdateTime: Date.now(),
             });
@@ -440,6 +475,7 @@ export const useStore = create<Store>()(
             projects: defaultData.projects,
             certificates: defaultData.certificates,
             experiences: defaultData.experiences,
+            contactMessages: defaultData.contactMessages,
             footer: defaultData.footer,
             lastUpdateTime: Date.now(),
           });
@@ -543,6 +579,19 @@ export const useStore = create<Store>()(
         const newExperiences = get().experiences.filter((e) => e.id !== id);
         set({ experiences: newExperiences });
         await get().saveToDatabase('experiences', newExperiences);
+      },
+
+      // Contact Messages
+      contactMessages: defaultData.contactMessages,
+      addContactMessage: async (message) => {
+        const newMessage = { 
+          ...message, 
+          id: Date.now().toString(),
+          date: new Date().toISOString()
+        };
+        const newMessages = [...get().contactMessages, newMessage];
+        set({ contactMessages: newMessages });
+        await get().saveToDatabase('contactMessages', newMessages);
       },
 
       // Profile
