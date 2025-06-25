@@ -8,6 +8,7 @@ const Hero: React.FC = () => {
   const { profile } = useStore();
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageKey, setImageKey] = useState(Date.now()); // Force image refresh
   
   const titles = [
     'Automation Engineer',
@@ -15,6 +16,11 @@ const Hero: React.FC = () => {
     'Innovation Creator',
     'Problem Solver'
   ];
+
+  // Update image key when profile image changes
+  useEffect(() => {
+    setImageKey(Date.now());
+  }, [profile.profileImage]);
 
   useEffect(() => {
     const currentTitle = titles[currentIndex];
@@ -72,9 +78,16 @@ const Hero: React.FC = () => {
             >
               <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-primary-500 shadow-lg shadow-primary-500/25 animate-glow">
                 <img
+                  key={imageKey} // Force re-render when image changes
                   src={profile.profileImage}
                   alt={profile.name}
                   className="w-full h-full object-cover"
+                  onLoad={() => console.log('Hero image loaded:', profile.profileImage)}
+                  onError={(e) => {
+                    console.error('Hero image failed to load:', profile.profileImage);
+                    // Fallback to default image
+                    (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
+                  }}
                 />
               </div>
             </motion.div>

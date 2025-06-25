@@ -60,6 +60,7 @@ interface Store {
   saveToDatabase: (dataType: string, content: any) => Promise<void>;
   setupRealtimeSubscription: () => void;
   cleanupRealtimeSubscription: () => void;
+  forceRefresh: () => void;
 
   // Projects
   projects: Project[];
@@ -262,6 +263,17 @@ export const useStore = create<Store>()(
       },
       logout: () => set({ user: null }),
 
+      // Force refresh function
+      forceRefresh: () => {
+        // Trigger a complete data reload
+        get().loadData();
+        
+        // Also trigger a page refresh after a short delay to ensure UI updates
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      },
+
       // Real-time subscription setup
       setupRealtimeSubscription: () => {
         if (!isSupabaseConfigured() || realtimeSubscription) {
@@ -289,6 +301,13 @@ export const useStore = create<Store>()(
                   switch (data_type) {
                     case 'profile':
                       set({ profile: content });
+                      // Force image cache refresh by adding timestamp
+                      if (content.profileImage) {
+                        const imageWithTimestamp = content.profileImage.includes('?') 
+                          ? `${content.profileImage}&t=${Date.now()}`
+                          : `${content.profileImage}?t=${Date.now()}`;
+                        set({ profile: { ...content, profileImage: imageWithTimestamp } });
+                      }
                       break;
                     case 'projects':
                       set({ projects: content });
@@ -303,6 +322,11 @@ export const useStore = create<Store>()(
                       set({ footer: content });
                       break;
                   }
+                  
+                  // Trigger a page refresh for immediate visual updates
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
                 }
               }
             )
@@ -368,8 +392,16 @@ export const useStore = create<Store>()(
               portfolioData[item.data_type] = item.content;
             });
 
+            // Add timestamp to profile image to force cache refresh
+            const profile = portfolioData.profile || defaultData.profile;
+            if (profile.profileImage) {
+              profile.profileImage = profile.profileImage.includes('?') 
+                ? `${profile.profileImage}&t=${Date.now()}`
+                : `${profile.profileImage}?t=${Date.now()}`;
+            }
+
             set({
-              profile: portfolioData.profile || defaultData.profile,
+              profile: profile,
               projects: portfolioData.projects || defaultData.projects,
               certificates: portfolioData.certificates || defaultData.certificates,
               experiences: portfolioData.experiences || defaultData.experiences,
@@ -427,6 +459,11 @@ export const useStore = create<Store>()(
           }
 
           console.log(`Successfully saved ${dataType} to database`);
+          
+          // Force a refresh after saving to ensure changes are visible
+          setTimeout(() => {
+            get().forceRefresh();
+          }, 500);
         } catch (error) {
           console.error('Error saving to database:', error);
           // Don't throw error to prevent UI from breaking
@@ -495,6 +532,14 @@ export const useStore = create<Store>()(
       profile: defaultData.profile,
       updateProfile: async (profile) => {
         const newProfile = { ...get().profile, ...profile };
+        
+        // Add timestamp to image URL to force cache refresh
+        if (newProfile.profileImage && !newProfile.profileImage.includes('t=')) {
+          newProfile.profileImage = newProfile.profileImage.includes('?') 
+            ? `${newProfile.profileImage}&t=${Date.now()}`
+            : `${newProfile.profileImage}?t=${Date.now()}`;
+        }
+        
         set({ profile: newProfile });
         await get().saveToDatabase('profile', newProfile);
       },
