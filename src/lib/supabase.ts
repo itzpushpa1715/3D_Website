@@ -62,24 +62,7 @@ export const uploadImage = async (file: File): Promise<string> => {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `images/${fileName}`;
 
-    // First, try to create the bucket if it doesn't exist
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const portfolioBucket = buckets?.find(bucket => bucket.name === 'portfolio-images');
-    
-    if (!portfolioBucket) {
-      const { error: bucketError } = await supabase.storage.createBucket('portfolio-images', {
-        public: true,
-        allowedMimeTypes: ['image/*'],
-        fileSizeLimit: 5242880 // 5MB
-      });
-      
-      if (bucketError) {
-        console.error('Error creating bucket:', bucketError);
-        // Fall back to object URL if bucket creation fails
-        return URL.createObjectURL(file);
-      }
-    }
-
+    // Upload the file directly - bucket should already exist
     const { error: uploadError } = await supabase.storage
       .from('portfolio-images')
       .upload(filePath, file, {
