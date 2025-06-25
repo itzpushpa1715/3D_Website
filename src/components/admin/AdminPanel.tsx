@@ -14,7 +14,9 @@ import {
   Mail,
   Info,
   Check,
-  X
+  X,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
@@ -33,6 +35,36 @@ const SuccessToast = ({ message, onClose }: { message: string; onClose: () => vo
     </button>
   </motion.div>
 );
+
+// Connection Status Indicator
+const ConnectionStatus = () => {
+  const [isConnected, setIsConnected] = useState(true);
+
+  React.useEffect(() => {
+    const checkConnection = () => {
+      setIsConnected(navigator.onLine);
+    };
+
+    window.addEventListener('online', checkConnection);
+    window.addEventListener('offline', checkConnection);
+
+    return () => {
+      window.removeEventListener('online', checkConnection);
+      window.removeEventListener('offline', checkConnection);
+    };
+  }, []);
+
+  return (
+    <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm ${
+      isConnected 
+        ? 'bg-green-600/20 text-green-400' 
+        : 'bg-red-600/20 text-red-400'
+    }`}>
+      {isConnected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+      <span>{isConnected ? 'Connected' : 'Offline'}</span>
+    </div>
+  );
+};
 
 const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -75,71 +107,81 @@ const AdminPanel: React.FC = () => {
     { id: 'footer', name: 'Footer', icon: Settings },
   ];
 
-  const handleSave = (type: string) => {
-    switch (type) {
-      case 'profile':
-        updateProfile(formData);
-        showSuccess('Profile updated successfully!');
-        break;
-      case 'about':
-        updateProfile(formData);
-        showSuccess('About section updated successfully!');
-        break;
-      case 'contact':
-        updateProfile({ socialLinks: { ...profile.socialLinks, ...formData } });
-        showSuccess('Contact information updated successfully!');
-        break;
-      case 'footer':
-        updateFooter(formData);
-        showSuccess('Footer updated successfully!');
-        break;
-      case 'project':
-        if (editingItem?.id) {
-          updateProject(editingItem.id, formData);
-          showSuccess('Project updated successfully!');
-        } else {
-          addProject({ ...formData, id: Date.now().toString() });
-          showSuccess('Project added successfully!');
-        }
-        break;
-      case 'certificate':
-        if (editingItem?.id) {
-          updateCertificate(editingItem.id, formData);
-          showSuccess('Certificate updated successfully!');
-        } else {
-          addCertificate({ ...formData, id: Date.now().toString() });
-          showSuccess('Certificate added successfully!');
-        }
-        break;
-      case 'experience':
-        if (editingItem?.id) {
-          updateExperience(editingItem.id, formData);
-          showSuccess('Experience updated successfully!');
-        } else {
-          addExperience({ ...formData, id: Date.now().toString() });
-          showSuccess('Experience added successfully!');
-        }
-        break;
-    }
-    setEditingItem(null);
-    setFormData({});
-  };
-
-  const handleDelete = (type: string, id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+  const handleSave = async (type: string) => {
+    try {
       switch (type) {
+        case 'profile':
+          await updateProfile(formData);
+          showSuccess('Profile updated successfully! Changes are now live for all visitors.');
+          break;
+        case 'about':
+          await updateProfile(formData);
+          showSuccess('About section updated successfully! Changes are now live for all visitors.');
+          break;
+        case 'contact':
+          await updateProfile({ socialLinks: { ...profile.socialLinks, ...formData } });
+          showSuccess('Contact information updated successfully! Changes are now live for all visitors.');
+          break;
+        case 'footer':
+          await updateFooter(formData);
+          showSuccess('Footer updated successfully! Changes are now live for all visitors.');
+          break;
         case 'project':
-          deleteProject(id);
-          showSuccess('Project deleted successfully!');
+          if (editingItem?.id) {
+            await updateProject(editingItem.id, formData);
+            showSuccess('Project updated successfully! Changes are now live for all visitors.');
+          } else {
+            await addProject({ ...formData, id: Date.now().toString() });
+            showSuccess('Project added successfully! Changes are now live for all visitors.');
+          }
           break;
         case 'certificate':
-          deleteCertificate(id);
-          showSuccess('Certificate deleted successfully!');
+          if (editingItem?.id) {
+            await updateCertificate(editingItem.id, formData);
+            showSuccess('Certificate updated successfully! Changes are now live for all visitors.');
+          } else {
+            await addCertificate({ ...formData, id: Date.now().toString() });
+            showSuccess('Certificate added successfully! Changes are now live for all visitors.');
+          }
           break;
         case 'experience':
-          deleteExperience(id);
-          showSuccess('Experience deleted successfully!');
+          if (editingItem?.id) {
+            await updateExperience(editingItem.id, formData);
+            showSuccess('Experience updated successfully! Changes are now live for all visitors.');
+          } else {
+            await addExperience({ ...formData, id: Date.now().toString() });
+            showSuccess('Experience added successfully! Changes are now live for all visitors.');
+          }
           break;
+      }
+      setEditingItem(null);
+      setFormData({});
+    } catch (error) {
+      console.error('Error saving data:', error);
+      showSuccess('Error saving changes. Please try again.');
+    }
+  };
+
+  const handleDelete = async (type: string, id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"? This change will be visible to all visitors immediately.`)) {
+      try {
+        switch (type) {
+          case 'project':
+            await deleteProject(id);
+            showSuccess('Project deleted successfully! Changes are now live for all visitors.');
+            break;
+          case 'certificate':
+            await deleteCertificate(id);
+            showSuccess('Certificate deleted successfully! Changes are now live for all visitors.');
+            break;
+          case 'experience':
+            await deleteExperience(id);
+            showSuccess('Experience deleted successfully! Changes are now live for all visitors.');
+            break;
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        showSuccess('Error deleting item. Please try again.');
       }
     }
   };
@@ -152,6 +194,11 @@ const AdminPanel: React.FC = () => {
   const renderProfileTab = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-white">Profile Settings</h3>
+      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+        <p className="text-blue-300 text-sm">
+          <strong>Real-time Updates:</strong> All changes made here will be immediately visible to visitors on other devices and computers.
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-neutral-300 mb-2">Name</label>
@@ -212,6 +259,11 @@ const AdminPanel: React.FC = () => {
   const renderAboutTab = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-white">About Me Section</h3>
+      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+        <p className="text-blue-300 text-sm">
+          <strong>Real-time Updates:</strong> Changes to skills and experience will be immediately visible to all visitors.
+        </p>
+      </div>
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-neutral-300 mb-2">Years of Experience</label>
@@ -260,6 +312,11 @@ const AdminPanel: React.FC = () => {
   const renderContactTab = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-white">Contact Information</h3>
+      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+        <p className="text-blue-300 text-sm">
+          <strong>Real-time Updates:</strong> Contact information changes will be immediately visible to all visitors.
+        </p>
+      </div>
       <div className="grid grid-cols-1 gap-6">
         <div>
           <label className="block text-sm font-medium text-neutral-300 mb-2">Email</label>
@@ -313,6 +370,12 @@ const AdminPanel: React.FC = () => {
           <Plus className="w-4 h-4 mr-2" />
           Add Experience
         </button>
+      </div>
+
+      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+        <p className="text-blue-300 text-sm">
+          <strong>Real-time Updates:</strong> Experience and education changes will be immediately visible to all visitors.
+        </p>
       </div>
 
       {(editingItem !== null) && (
@@ -450,6 +513,12 @@ const AdminPanel: React.FC = () => {
         </button>
       </div>
 
+      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+        <p className="text-blue-300 text-sm">
+          <strong>Real-time Updates:</strong> Certificate changes will be immediately visible to all visitors.
+        </p>
+      </div>
+
       {(editingItem !== null) && (
         <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
           <h4 className="text-lg font-semibold text-white mb-4">
@@ -553,6 +622,12 @@ const AdminPanel: React.FC = () => {
           <Plus className="w-4 h-4 mr-2" />
           Add Project
         </button>
+      </div>
+
+      <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+        <p className="text-blue-300 text-sm">
+          <strong>Real-time Updates:</strong> Project changes will be immediately visible to all visitors.
+        </p>
       </div>
 
       {(editingItem !== null) && (
@@ -702,6 +777,11 @@ const AdminPanel: React.FC = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-white">Footer Settings</h3>
+            <div className="bg-blue-600/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+              <p className="text-blue-300 text-sm">
+                <strong>Real-time Updates:</strong> Footer changes will be immediately visible to all visitors.
+              </p>
+            </div>
             <div>
               <label className="block text-sm font-medium text-neutral-300 mb-2">Footer Text</label>
               <input
@@ -741,7 +821,13 @@ const AdminPanel: React.FC = () => {
         {/* Sidebar */}
         <div className="w-64 bg-neutral-800 border-r border-neutral-700 min-h-screen">
           <div className="p-6">
-            <h2 className="text-xl font-bold text-white mb-6">Admin Panel</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Admin Panel</h2>
+            
+            {/* Connection Status */}
+            <div className="mb-6">
+              <ConnectionStatus />
+            </div>
+            
             <nav className="space-y-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;

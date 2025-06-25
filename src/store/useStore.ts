@@ -58,6 +58,8 @@ interface Store {
   isLoading: boolean;
   loadData: () => Promise<void>;
   saveToDatabase: (dataType: string, content: any) => Promise<void>;
+  setupRealtimeSubscription: () => void;
+  cleanupRealtimeSubscription: () => void;
 
   // Projects
   projects: Project[];
@@ -224,6 +226,9 @@ const defaultData = {
   },
 };
 
+// Global variable to store the subscription
+let realtimeSubscription: any = null;
+
 export const useStore = create<Store>()(
   persist(
     (set, get) => ({
@@ -257,6 +262,61 @@ export const useStore = create<Store>()(
       },
       logout: () => set({ user: null }),
 
+      // Real-time subscription setup
+      setupRealtimeSubscription: () => {
+        if (realtimeSubscription) {
+          return; // Already subscribed
+        }
+
+        realtimeSubscription = supabase
+          .channel('portfolio_changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'portfolio_data',
+            },
+            (payload) => {
+              console.log('Real-time update received:', payload);
+              
+              // Reload data when changes are detected
+              if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+                const { data_type, content } = payload.new;
+                
+                // Update the specific data type in the store
+                switch (data_type) {
+                  case 'profile':
+                    set({ profile: content });
+                    break;
+                  case 'projects':
+                    set({ projects: content });
+                    break;
+                  case 'certificates':
+                    set({ certificates: content });
+                    break;
+                  case 'experiences':
+                    set({ experiences: content });
+                    break;
+                  case 'footer':
+                    set({ footer: content });
+                    break;
+                }
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
+          });
+      },
+
+      cleanupRealtimeSubscription: () => {
+        if (realtimeSubscription) {
+          supabase.removeChannel(realtimeSubscription);
+          realtimeSubscription = null;
+        }
+      },
+
       // Data loading
       isLoading: false,
       loadData: async () => {
@@ -268,6 +328,14 @@ export const useStore = create<Store>()(
 
           if (error) {
             console.error('Error loading data:', error);
+            // Use default data if database fails
+            set({
+              profile: defaultData.profile,
+              projects: defaultData.projects,
+              certificates: defaultData.certificates,
+              experiences: defaultData.experiences,
+              footer: defaultData.footer,
+            });
             return;
           }
 
@@ -284,9 +352,29 @@ export const useStore = create<Store>()(
               experiences: portfolioData.experiences || defaultData.experiences,
               footer: portfolioData.footer || defaultData.footer,
             });
+          } else {
+            // No data found, use defaults
+            set({
+              profile: defaultData.profile,
+              projects: defaultData.projects,
+              certificates: defaultData.certificates,
+              experiences: defaultData.experiences,
+              footer: defaultData.footer,
+            });
           }
+
+          // Setup real-time subscription after initial load
+          get().setupRealtimeSubscription();
         } catch (error) {
           console.error('Error loading data:', error);
+          // Use default data on error
+          set({
+            profile: defaultData.profile,
+            projects: defaultData.projects,
+            certificates: defaultData.certificates,
+            experiences: defaultData.experiences,
+            footer: defaultData.footer,
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -308,6 +396,8 @@ export const useStore = create<Store>()(
             console.error('Error saving data:', error);
             throw error;
           }
+
+          console.log(`Successfully saved ${dataType} to database`);
         } catch (error) {
           console.error('Error saving to database:', error);
           throw error;

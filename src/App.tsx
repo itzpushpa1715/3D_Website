@@ -54,7 +54,7 @@ const AdminRoute: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const { isDarkMode, loadData } = useStore();
+  const { isDarkMode, loadData, cleanupRealtimeSubscription } = useStore();
 
   useEffect(() => {
     // Initialize theme on app load
@@ -66,9 +66,14 @@ const App: React.FC = () => {
       document.body.classList.remove('dark');
     }
 
-    // Load data from database
+    // Load data from database and setup real-time subscription
     loadData();
-  }, [isDarkMode, loadData]);
+
+    // Cleanup subscription on unmount
+    return () => {
+      cleanupRealtimeSubscription();
+    };
+  }, [isDarkMode, loadData, cleanupRealtimeSubscription]);
 
   return (
     <Router>
