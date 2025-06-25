@@ -4,6 +4,7 @@ import { Send, Mail, Phone, MapPin, Github, Linkedin } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
 const TerminalContact = () => {
+  const { profile } = useStore();
   const [command, setCommand] = useState('');
   const [output, setOutput] = useState([
     '> Welcome to Pushpa\'s contact terminal',
@@ -24,18 +25,18 @@ const TerminalContact = () => {
         newOutput.push('  clear    - Clear terminal');
         break;
       case 'email':
-        newOutput.push('📧 pushpa@example.com');
+        newOutput.push(`📧 ${profile.socialLinks.email}`);
         break;
       case 'github':
         newOutput.push('🐙 Opening GitHub...');
-        window.open('https://github.com/itzpushpa1715', '_blank');
+        window.open(profile.socialLinks.github, '_blank');
         break;
       case 'linkedin':
         newOutput.push('💼 Opening LinkedIn...');
-        window.open('https://www.linkedin.com/in/pushpakoirala/', '_blank');
+        window.open(profile.socialLinks.linkedin, '_blank');
         break;
       case 'location':
-        newOutput.push('📍 Jyvaskyla, Finland');
+        newOutput.push(`📍 ${profile.location}`);
         break;
       case 'clear':
         setOutput(['> Terminal cleared', '> Ready for new commands...']);

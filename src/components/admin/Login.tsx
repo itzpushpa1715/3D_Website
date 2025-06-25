@@ -11,15 +11,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
+    // Simulate loading for better UX
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     if (login(credentials.username, credentials.password)) {
       onLogin();
     } else {
-      setError('Invalid credentials. Use admin/pushpa2024');
+      setError('Invalid credentials. Please check your username and password.');
     }
+    setIsLoading(false);
   };
 
   return (
@@ -52,6 +60,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   className="w-full pl-11 pr-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary-500 focus:outline-none transition-colors duration-200"
                   placeholder="Enter username"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -69,11 +78,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   className="w-full pl-11 pr-12 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary-500 focus:outline-none transition-colors duration-200"
                   placeholder="Enter password"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-white transition-colors duration-200"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -81,24 +92,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
 
             {error && (
-              <div className="text-red-400 text-sm text-center bg-red-400/10 border border-red-400/20 rounded-lg p-3">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-400 text-sm text-center bg-red-400/10 border border-red-400/20 rounded-lg p-3"
+              >
                 {error}
-              </div>
+              </motion.div>
             )}
 
             <button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center"
+              disabled={isLoading}
+              className="w-full py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 disabled:from-neutral-600 disabled:to-neutral-700 text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center"
             >
-              Access Admin Panel
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                'Access Admin Panel'
+              )}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-neutral-500 text-sm">
-              Demo credentials: admin / pushpa2024
-            </p>
-          </div>
         </div>
       </motion.div>
     </div>

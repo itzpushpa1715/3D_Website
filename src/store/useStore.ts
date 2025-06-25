@@ -281,7 +281,7 @@ export const useStore = create<Store>()(
         socialLinks: {
           github: 'https://github.com/itzpushpa1715',
           linkedin: 'https://www.linkedin.com/in/pushpakoirala/',
-          email: 'pushpa@example.com',
+          email: 'thepushpaco@outlook.com',
         },
       },
       updateProfile: (profile) =>
