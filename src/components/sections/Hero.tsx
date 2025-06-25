@@ -8,7 +8,7 @@ const Hero: React.FC = () => {
   const { profile } = useStore();
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [imageKey, setImageKey] = useState(Date.now()); // Force image refresh
+  const [imageKey, setImageKey] = useState(Date.now());
   
   const titles = [
     'Automation Engineer',
@@ -55,10 +55,10 @@ const Hero: React.FC = () => {
     }
   };
 
-  // Create a unique image URL with timestamp to force cache refresh
-  const profileImageWithTimestamp = profile.profileImage.includes('?') 
+  // Create a unique image URL to force cache refresh
+  const profileImageUrl = profile.profileImage.includes('?') 
     ? profile.profileImage 
-    : `${profile.profileImage}?t=${imageKey}`;
+    : `${profile.profileImage}?v=${imageKey}`;
 
   return (
     <section id="home" className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900">
@@ -83,14 +83,13 @@ const Hero: React.FC = () => {
             >
               <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-primary-500 shadow-lg shadow-primary-500/25 animate-glow">
                 <img
-                  key={`hero-${imageKey}`} // Force re-render when image changes
-                  src={profileImageWithTimestamp}
+                  key={`hero-${imageKey}`}
+                  src={profileImageUrl}
                   alt={profile.name}
                   className="w-full h-full object-cover"
-                  onLoad={() => console.log('Hero image loaded:', profileImageWithTimestamp)}
+                  onLoad={() => console.log('Hero image loaded:', profileImageUrl)}
                   onError={(e) => {
-                    console.error('Hero image failed to load:', profileImageWithTimestamp);
-                    // Fallback to default image
+                    console.error('Hero image failed to load:', profileImageUrl);
                     (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
                   }}
                 />

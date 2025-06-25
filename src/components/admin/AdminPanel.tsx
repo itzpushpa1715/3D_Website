@@ -130,16 +130,10 @@ const AdminPanel: React.FC = () => {
       // Update form state immediately
       setProfileForm(updatedProfile);
       
-      // Save to database
+      // Save to database and update store
       await updateProfile(updatedProfile);
       
-      showMessage('Profile image updated successfully! Changes will be visible shortly.', 'success');
-      
-      // Refresh data after a short delay to ensure database is updated
-      setTimeout(async () => {
-        await loadData();
-        showMessage('Profile updated and synchronized!', 'success');
-      }, 2000);
+      showMessage('Profile image updated successfully!', 'success');
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -156,11 +150,6 @@ const AdminPanel: React.FC = () => {
     try {
       await updateProfile(profileForm);
       showMessage('Profile updated successfully!', 'success');
-      
-      // Refresh data to ensure consistency
-      setTimeout(async () => {
-        await loadData();
-      }, 1000);
     } catch (error) {
       console.error('Profile update error:', error);
       showMessage('Error updating profile. Please try again.', 'error');
@@ -379,11 +368,10 @@ const AdminPanel: React.FC = () => {
                         src={profileForm.profileImage}
                         alt="Profile"
                         className="w-full h-full object-cover"
-                        key={`${profileForm.profileImage}-${Date.now()}`} // Force re-render
+                        key={`admin-${profileForm.profileImage}-${Date.now()}`}
                         onLoad={() => console.log('Admin profile image loaded:', profileForm.profileImage)}
                         onError={(e) => {
                           console.error('Admin profile image failed to load:', profileForm.profileImage);
-                          // Fallback to default image
                           (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
                         }}
                       />
@@ -406,7 +394,7 @@ const AdminPanel: React.FC = () => {
                         {isLoading ? 'Uploading...' : 'Upload New Image'}
                       </button>
                       <p className="text-sm text-neutral-400 mt-2">
-                        Changes may take a moment to appear across all devices
+                        Changes will be visible immediately after upload
                       </p>
                     </div>
                   </div>
@@ -686,7 +674,7 @@ const AdminPanel: React.FC = () => {
                       <input
                         type="url"
                         value={projectForm.githubUrl}
-                        onChange={(e) => setProjectForm(rev => ({ ...prev, githubUrl: e.target.value }))}
+                        onChange={(e) => setProjectForm(prev => ({ ...prev, githubUrl: e.target.value }))}
                         className="w-full px-4 py-3 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
                       />
                     </div>

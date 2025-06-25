@@ -56,6 +56,7 @@ interface Store {
 
   // Data loading
   isLoading: boolean;
+  lastUpdateTime: number;
   loadData: () => Promise<void>;
   saveToDatabase: (dataType: string, content: any) => Promise<void>;
   setupRealtimeSubscription: () => void;
@@ -228,6 +229,7 @@ const defaultData = {
 
 // Global variable to store the subscription
 let realtimeSubscription: any = null;
+let isUpdatingFromRealtime = false;
 
 export const useStore = create<Store>()(
   persist(
@@ -281,33 +283,49 @@ export const useStore = create<Store>()(
               (payload) => {
                 console.log('Real-time update received:', payload);
                 
+                // Prevent infinite loops by checking if we're already updating
+                if (isUpdatingFromRealtime) {
+                  return;
+                }
+                
                 // Only update if this is not the current user making the change
                 if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-                  const { data_type, content } = payload.new;
+                  const { data_type, content, updated_at } = payload.new;
+                  const currentUpdateTime = get().lastUpdateTime;
+                  const payloadTime = new Date(updated_at).getTime();
                   
-                  // Update the specific data type in the store
-                  switch (data_type) {
-                    case 'profile':
-                      // Add cache busting timestamp to profile image
-                      if (content.profileImage && !content.profileImage.includes('t=')) {
-                        content.profileImage = content.profileImage.includes('?') 
-                          ? `${content.profileImage}&t=${Date.now()}`
-                          : `${content.profileImage}?t=${Date.now()}`;
-                      }
-                      set({ profile: content });
-                      break;
-                    case 'projects':
-                      set({ projects: content });
-                      break;
-                    case 'certificates':
-                      set({ certificates: content });
-                      break;
-                    case 'experiences':
-                      set({ experiences: content });
-                      break;
-                    case 'footer':
-                      set({ footer: content });
-                      break;
+                  // Only update if the payload is newer than our last update
+                  if (payloadTime > currentUpdateTime) {
+                    isUpdatingFromRealtime = true;
+                    
+                    // Update the specific data type in the store
+                    switch (data_type) {
+                      case 'profile':
+                        // Add cache busting timestamp to profile image
+                        if (content.profileImage && !content.profileImage.includes('t=')) {
+                          content.profileImage = content.profileImage.includes('?') 
+                            ? `${content.profileImage}&t=${Date.now()}`
+                            : `${content.profileImage}?t=${Date.now()}`;
+                        }
+                        set({ profile: content, lastUpdateTime: payloadTime });
+                        break;
+                      case 'projects':
+                        set({ projects: content, lastUpdateTime: payloadTime });
+                        break;
+                      case 'certificates':
+                        set({ certificates: content, lastUpdateTime: payloadTime });
+                        break;
+                      case 'experiences':
+                        set({ experiences: content, lastUpdateTime: payloadTime });
+                        break;
+                      case 'footer':
+                        set({ footer: content, lastUpdateTime: payloadTime });
+                        break;
+                    }
+                    
+                    setTimeout(() => {
+                      isUpdatingFromRealtime = false;
+                    }, 1000);
                   }
                 }
               }
@@ -333,6 +351,7 @@ export const useStore = create<Store>()(
 
       // Data loading
       isLoading: false,
+      lastUpdateTime: 0,
       loadData: async () => {
         set({ isLoading: true });
         
@@ -346,6 +365,7 @@ export const useStore = create<Store>()(
             experiences: defaultData.experiences,
             footer: defaultData.footer,
             isLoading: false,
+            lastUpdateTime: Date.now(),
           });
           return;
         }
@@ -353,7 +373,8 @@ export const useStore = create<Store>()(
         try {
           const { data, error } = await supabase
             .from('portfolio_data')
-            .select('*');
+            .select('*')
+            .order('updated_at', { ascending: false });
 
           if (error) {
             console.error('Error loading data:', error);
@@ -364,14 +385,21 @@ export const useStore = create<Store>()(
               certificates: defaultData.certificates,
               experiences: defaultData.experiences,
               footer: defaultData.footer,
+              lastUpdateTime: Date.now(),
             });
             return;
           }
 
           if (data && data.length > 0) {
             const portfolioData: any = {};
+            let latestUpdateTime = 0;
+            
             data.forEach((item) => {
               portfolioData[item.data_type] = item.content;
+              const itemTime = new Date(item.updated_at).getTime();
+              if (itemTime > latestUpdateTime) {
+                latestUpdateTime = itemTime;
+              }
             });
 
             // Add timestamp to profile image to force cache refresh
@@ -388,6 +416,7 @@ export const useStore = create<Store>()(
               certificates: portfolioData.certificates || defaultData.certificates,
               experiences: portfolioData.experiences || defaultData.experiences,
               footer: portfolioData.footer || defaultData.footer,
+              lastUpdateTime: latestUpdateTime,
             });
           } else {
             // No data found, use defaults
@@ -397,6 +426,7 @@ export const useStore = create<Store>()(
               certificates: defaultData.certificates,
               experiences: defaultData.experiences,
               footer: defaultData.footer,
+              lastUpdateTime: Date.now(),
             });
           }
 
@@ -411,6 +441,7 @@ export const useStore = create<Store>()(
             certificates: defaultData.certificates,
             experiences: defaultData.experiences,
             footer: defaultData.footer,
+            lastUpdateTime: Date.now(),
           });
         } finally {
           set({ isLoading: false });
@@ -424,13 +455,19 @@ export const useStore = create<Store>()(
           return;
         }
 
+        // Prevent saving during realtime updates
+        if (isUpdatingFromRealtime) {
+          return;
+        }
+
         try {
+          const now = new Date().toISOString();
           const { error } = await supabase
             .from('portfolio_data')
             .upsert({
               data_type: dataType,
               content: content,
-              updated_at: new Date().toISOString(),
+              updated_at: now,
             }, {
               onConflict: 'data_type'
             });
@@ -440,6 +477,9 @@ export const useStore = create<Store>()(
             throw error;
           }
 
+          // Update our local timestamp to prevent unnecessary realtime updates
+          set({ lastUpdateTime: new Date(now).getTime() });
+          
           console.log(`Successfully saved ${dataType} to database`);
         } catch (error) {
           console.error('Error saving to database:', error);
