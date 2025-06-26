@@ -11,6 +11,7 @@ import Footer from './components/sections/Footer';
 import Login from './components/admin/Login';
 import AdminPanel from './components/admin/AdminPanel';
 import LoadingScreen from './components/LoadingScreen';
+import AIChat from './components/AIChat';
 import { useStore } from './store/useStore';
 
 const HomePage: React.FC = () => {
@@ -34,6 +35,7 @@ const HomePage: React.FC = () => {
       <Certificates />
       <Contact />
       <Footer />
+      <AIChat />
     </div>
   );
 };

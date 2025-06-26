@@ -62,10 +62,13 @@ const Hero: React.FC = () => {
 
   return (
     <section id="home" className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900">
-      {/* 3D Background */}
-      <div className="absolute inset-0 z-0">
+      {/* 3D Background - Hidden on mobile for performance */}
+      <div className="absolute inset-0 z-0 hidden md:block">
         <Scene3D />
       </div>
+      
+      {/* Mobile Background Gradient */}
+      <div className="absolute inset-0 z-0 md:hidden bg-gradient-to-br from-primary-900/20 via-neutral-900 to-secondary-900/20"></div>
       
       {/* Overlay for better text readability */}
       <div className="absolute inset-0 bg-black/30 z-10"></div>
@@ -79,9 +82,9 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="mb-8"
+              className="mb-6 md:mb-8"
             >
-              <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-primary-500 shadow-lg shadow-primary-500/25 animate-glow">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mx-auto rounded-full overflow-hidden border-4 border-primary-500 shadow-lg shadow-primary-500/25 animate-glow">
                 <img
                   key={`hero-${imageKey}`}
                   src={profileImageUrl}
@@ -101,7 +104,7 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-5xl md:text-7xl font-bold text-white mb-4"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-3 md:mb-4 px-4"
             >
               {profile.name}
             </motion.h1>
@@ -111,7 +114,7 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="text-2xl md:text-4xl text-primary-400 mb-6 h-12 flex items-center justify-center"
+              className="text-lg sm:text-xl md:text-2xl lg:text-4xl text-primary-400 mb-4 md:mb-6 h-8 sm:h-10 md:h-12 flex items-center justify-center px-4"
             >
               <span className="font-mono">
                 {displayText}
@@ -124,7 +127,7 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto mb-8 leading-relaxed"
+              className="text-sm sm:text-base md:text-lg lg:text-xl text-neutral-300 max-w-3xl mx-auto mb-6 md:mb-8 leading-relaxed px-4"
             >
               {profile.bio}
             </motion.p>
@@ -134,7 +137,7 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.0 }}
-              className="text-sm text-neutral-400 mb-8"
+              className="text-xs sm:text-sm text-neutral-400 mb-6 md:mb-8 px-4"
             >
               📍 {profile.location}
             </motion.div>
@@ -144,29 +147,29 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.2 }}
-              className="flex justify-center space-x-6 mb-12"
+              className="flex justify-center space-x-4 sm:space-x-6 mb-8 md:mb-12 px-4"
             >
               <a
                 href={profile.socialLinks.github}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 rounded-full bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700 hover:border-primary-500 transition-all duration-300 group"
+                className="p-2 sm:p-3 rounded-full bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700 hover:border-primary-500 transition-all duration-300 group"
               >
-                <Github className="w-6 h-6 text-neutral-400 group-hover:text-primary-400 transition-colors duration-300" />
+                <Github className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-400 group-hover:text-primary-400 transition-colors duration-300" />
               </a>
               <a
                 href={profile.socialLinks.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 rounded-full bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700 hover:border-primary-500 transition-all duration-300 group"
+                className="p-2 sm:p-3 rounded-full bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700 hover:border-primary-500 transition-all duration-300 group"
               >
-                <Linkedin className="w-6 h-6 text-neutral-400 group-hover:text-primary-400 transition-colors duration-300" />
+                <Linkedin className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-400 group-hover:text-primary-400 transition-colors duration-300" />
               </a>
               <a
                 href={`mailto:${profile.socialLinks.email}`}
-                className="p-3 rounded-full bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700 hover:border-primary-500 transition-all duration-300 group"
+                className="p-2 sm:p-3 rounded-full bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700 hover:border-primary-500 transition-all duration-300 group"
               >
-                <Mail className="w-6 h-6 text-neutral-400 group-hover:text-primary-400 transition-colors duration-300" />
+                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-400 group-hover:text-primary-400 transition-colors duration-300" />
               </a>
             </motion.div>
 
@@ -176,21 +179,21 @@ const Hero: React.FC = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 1.4 }}
               onClick={scrollToNext}
-              className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary-500/25 group"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary-500/25 group text-sm sm:text-base"
             >
               Explore My Work
-              <ChevronDown className="ml-2 w-5 h-5 group-hover:translate-y-1 transition-transform duration-300" />
+              <ChevronDown className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-y-1 transition-transform duration-300" />
             </motion.button>
           </div>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
+      {/* Scroll Indicator - Hidden on mobile */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 2 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 hidden md:block"
       >
         <div className="flex flex-col items-center text-neutral-400">
           <span className="text-sm mb-2">Scroll Down</span>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Github, Filter, X } from 'lucide-react';
-import ProjectCard3D from '../3D/ProjectCard3D';
 import { useStore } from '../../store/useStore';
 
 const ProjectModal = ({ project, onClose }: { project: any; onClose: () => void }) => {
@@ -17,7 +16,7 @@ const ProjectModal = ({ project, onClose }: { project: any; onClose: () => void 
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.8, opacity: 0 }}
-        className="bg-neutral-900 rounded-2xl border border-neutral-700 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-neutral-900 rounded-xl md:rounded-2xl border border-neutral-700 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
@@ -28,35 +27,35 @@ const ProjectModal = ({ project, onClose }: { project: any; onClose: () => void 
             <X className="w-5 h-5" />
           </button>
           
-          <div className="p-8">
+          <div className="p-4 md:p-8">
             <div className="mb-6">
               <img
                 src={project.image}
                 alt={project.title}
-                className="w-full h-64 object-cover rounded-xl mb-6"
+                className="w-full h-48 md:h-64 object-cover rounded-lg md:rounded-xl mb-4 md:mb-6"
               />
               
-              <h2 className="text-3xl font-bold text-white mb-2">{project.title}</h2>
-              <p className="text-neutral-400 text-lg mb-4">{project.description}</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{project.title}</h2>
+              <p className="text-neutral-400 text-base md:text-lg mb-4">{project.description}</p>
               
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 mb-4 md:mb-6">
                 {project.technologies.map((tech: string) => (
                   <span
                     key={tech}
-                    className="px-3 py-1 bg-primary-600/20 text-primary-300 rounded-full text-sm"
+                    className="px-2 md:px-3 py-1 bg-primary-600/20 text-primary-300 rounded-full text-xs md:text-sm"
                   >
                     {tech}
                   </span>
                 ))}
               </div>
               
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                 {project.liveUrl && (
                   <a
                     href={project.liveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
+                    className="inline-flex items-center justify-center px-4 md:px-6 py-2 md:py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200 text-sm md:text-base"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Live Demo
@@ -68,7 +67,7 @@ const ProjectModal = ({ project, onClose }: { project: any; onClose: () => void 
                     href={project.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors duration-200"
+                    className="inline-flex items-center justify-center px-4 md:px-6 py-2 md:py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors duration-200 text-sm md:text-base"
                   >
                     <Github className="w-4 h-4 mr-2" />
                     View Code
@@ -112,7 +111,7 @@ const Projects: React.FC = () => {
   };
 
   return (
-    <section id="projects" className="py-20 bg-neutral-900">
+    <section id="projects" className="py-12 md:py-20 bg-neutral-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={containerVariants}
@@ -121,22 +120,22 @@ const Projects: React.FC = () => {
           viewport={{ once: true, amount: 0.3 }}
         >
           {/* Section Header */}
-          <motion.div variants={itemVariants} className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+          <motion.div variants={itemVariants} className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
               Featured Projects
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto mb-6"></div>
-            <p className="text-xl text-neutral-400 max-w-3xl mx-auto">
+            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto mb-4 md:mb-6"></div>
+            <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto px-4">
               Explore my latest work in automation, robotics, and software development
             </p>
           </motion.div>
 
           {/* Filters */}
-          <motion.div variants={itemVariants} className="flex justify-center mb-12">
+          <motion.div variants={itemVariants} className="flex justify-center mb-8 md:mb-12">
             <div className="relative">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors duration-200"
+                className="inline-flex items-center px-4 md:px-6 py-2 md:py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors duration-200 text-sm md:text-base"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 {filter}
@@ -157,7 +156,7 @@ const Projects: React.FC = () => {
                           setFilter(category);
                           setShowFilters(false);
                         }}
-                        className={`w-full text-left px-4 py-2 hover:bg-neutral-700 first:rounded-t-lg last:rounded-b-lg transition-colors duration-200 ${
+                        className={`w-full text-left px-4 py-2 hover:bg-neutral-700 first:rounded-t-lg last:rounded-b-lg transition-colors duration-200 text-sm md:text-base ${
                           filter === category ? 'text-primary-400' : 'text-white'
                         }`}
                       >
@@ -170,29 +169,14 @@ const Projects: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* 3D Project Gallery */}
-          <motion.div variants={itemVariants} className="mb-16">
-            <div className="bg-neutral-800/50 rounded-2xl border border-neutral-700 overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-white mb-4 text-center">
-                  Interactive 3D Gallery
-                </h3>
-                <ProjectCard3D 
-                  projects={filteredProjects} 
-                  onProjectClick={setSelectedProject}
-                />
-              </div>
-            </div>
-          </motion.div>
-
           {/* Project Grid */}
-          <motion.div variants={containerVariants} className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <motion.div variants={containerVariants} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {filteredProjects.map((project) => (
               <motion.div
                 key={project.id}
                 variants={itemVariants}
                 whileHover={{ y: -5 }}
-                className="bg-neutral-800/50 rounded-2xl border border-neutral-700 overflow-hidden hover:border-neutral-600 transition-all duration-300 group cursor-pointer"
+                className="bg-neutral-800/50 rounded-xl md:rounded-2xl border border-neutral-700 overflow-hidden hover:border-neutral-600 transition-all duration-300 group cursor-pointer"
                 onClick={() => setSelectedProject(project)}
               >
                 <div className="aspect-video overflow-hidden">
@@ -203,27 +187,27 @@ const Projects: React.FC = () => {
                   />
                 </div>
                 
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 bg-primary-600/20 text-primary-300 rounded-full text-sm">
+                    <span className="px-2 md:px-3 py-1 bg-primary-600/20 text-primary-300 rounded-full text-xs md:text-sm">
                       {project.category}
                     </span>
                     {project.featured && (
-                      <span className="px-3 py-1 bg-yellow-600/20 text-yellow-300 rounded-full text-sm">
+                      <span className="px-2 md:px-3 py-1 bg-yellow-600/20 text-yellow-300 rounded-full text-xs md:text-sm">
                         Featured
                       </span>
                     )}
                   </div>
                   
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary-400 transition-colors duration-200">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-2 group-hover:text-primary-400 transition-colors duration-200 line-clamp-2">
                     {project.title}
                   </h3>
                   
-                  <p className="text-neutral-400 text-sm mb-4 line-clamp-2">
+                  <p className="text-neutral-400 text-xs md:text-sm mb-4 line-clamp-2">
                     {project.shortDescription}
                   </p>
                   
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap gap-1 md:gap-2 mb-4">
                     {project.technologies.slice(0, 3).map((tech: string) => (
                       <span
                         key={tech}
@@ -240,7 +224,7 @@ const Projects: React.FC = () => {
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-neutral-500 text-sm">{project.date}</span>
+                    <span className="text-neutral-500 text-xs md:text-sm">{project.date}</span>
                     <div className="flex gap-2">
                       {project.githubUrl && (
                         <a
