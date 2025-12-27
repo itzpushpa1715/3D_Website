@@ -1,24 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, 
-  FolderOpen, 
-  Award, 
-  Briefcase, 
-  MessageSquare, 
-  Settings, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Save, 
-  X,
-  Upload,
-  Eye,
-  EyeOff,
-  LogOut,
-  Menu,
-  Home
-} from 'lucide-react';
+import { Users, FolderOpen, Award, Briefcase, MessageSquare, Settings, Plus, CreditCard as Edit, Trash2, Save, X, Upload, Eye, EyeOff, LogOut, Menu, Home } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { uploadImage, deleteImage } from '../../lib/supabase';
 
