@@ -381,10 +381,14 @@ export const useStore = create<Store>()(
       },
 
       // Data loading
-      isLoading: false,
+      isLoading: true,
       lastUpdateTime: 0,
       loadData: async () => {
-        set({ isLoading: true });
+        // Don't set loading to true if we already have data
+        const currentState = get();
+        if (!currentState.projects.length && !currentState.experiences.length) {
+          set({ isLoading: true });
+        }
         
         // If Supabase is not configured, use default data
         if (!isSupabaseConfigured()) {
@@ -399,6 +403,8 @@ export const useStore = create<Store>()(
             isLoading: false,
             lastUpdateTime: Date.now(),
           });
+          // Small delay to show loading screen briefly
+          await new Promise(resolve => setTimeout(resolve, 500));
           return;
         }
 
@@ -479,6 +485,8 @@ export const useStore = create<Store>()(
             footer: defaultData.footer,
             lastUpdateTime: Date.now(),
           });
+          // Small delay to show loading screen briefly
+          await new Promise(resolve => setTimeout(resolve, 500));
         } finally {
           set({ isLoading: false });
         }

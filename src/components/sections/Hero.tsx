@@ -63,12 +63,12 @@ const Hero: React.FC = () => {
   return (
     <section id="home" className="relative min-h-screen overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900">
       {/* 3D Background - Hidden on mobile for performance */}
-      <div className="absolute inset-0 z-0 hidden md:block">
+      <div className="absolute inset-0 z-0 hidden lg:block">
         <Scene3D />
       </div>
       
       {/* Mobile Background Gradient */}
-      <div className="absolute inset-0 z-0 md:hidden bg-gradient-to-br from-primary-900/20 via-neutral-900 to-secondary-900/20"></div>
+      <div className="absolute inset-0 z-0 lg:hidden bg-gradient-to-br from-primary-900/20 via-neutral-900 to-secondary-900/20"></div>
       
       {/* Overlay for better text readability */}
       <div className="absolute inset-0 bg-black/30 z-10"></div>

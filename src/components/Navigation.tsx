@@ -128,12 +128,15 @@ const Navigation: React.FC = () => {
               <motion.a
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                href="/admin"
-                className="p-2 rounded-lg bg-primary-600 hover:bg-primary-700 transition-colors duration-200 group"
-                title="Admin Panel"
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-neutral-800 dark:bg-neutral-800 hover:bg-neutral-700 dark:hover:bg-neutral-700 transition-colors duration-200"
               >
-                <Shield className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200" />
-              </motion.a>
+                {isDarkMode ? (
+                  <Sun className="w-4 h-4 text-yellow-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-blue-400" />
+                )}
+              </motion.button>
             </div>
 
             {/* Mobile menu button */}
@@ -148,13 +151,6 @@ const Navigation: React.FC = () => {
                   <Moon className="w-4 h-4 text-blue-400" />
                 )}
               </button>
-              
-              <a
-                href="/admin"
-                className="p-2 rounded-lg bg-primary-600/90 hover:bg-primary-700/90 transition-colors duration-200 backdrop-blur-sm"
-              >
-                <Shield className="w-4 h-4 text-white" />
-              </a>
               
               <button
                 id="mobile-menu-button"
@@ -227,16 +223,6 @@ const Navigation: React.FC = () => {
                       </motion.a>
                     ))}
                     
-                    <motion.a
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: navItems.length * 0.05 }}
-                      href="/admin"
-                      className="flex items-center px-4 py-3 text-primary-400 hover:text-primary-300 hover:bg-neutral-800/50 rounded-lg transition-all duration-200 text-base font-medium"
-                    >
-                      <Shield className="w-4 h-4 mr-3" />
-                      Admin Panel
-                    </motion.a>
                   </div>
                 </div>
 

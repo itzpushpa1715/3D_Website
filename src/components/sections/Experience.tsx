@@ -76,15 +76,15 @@ const Experience: React.FC = () => {
           </motion.div>
 
           {/* Experience Cards */}
-          <div className="space-y-6 md:space-y-8">
+          <div className="space-y-4 md:space-y-6 lg:space-y-8">
             {sortedExperiences.length > 0 ? (
               sortedExperiences.map((experience, index) => (
                 <motion.div
                   key={experience.id}
                   variants={itemVariants}
-                  className="bg-neutral-900/50 rounded-xl md:rounded-2xl border border-neutral-700 overflow-hidden hover:border-neutral-600 transition-all duration-300"
+                  className="bg-neutral-900/50 rounded-lg md:rounded-xl border border-neutral-700 overflow-hidden hover:border-neutral-600 transition-all duration-300"
                 >
-                  <div className="p-4 md:p-6 lg:p-8">
+                  <div className="p-3 md:p-4 lg:p-6">
                     <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-start md:justify-between mb-4 md:mb-6">
                       <div className="flex-1">
                         <div className="flex items-start md:items-center mb-3 space-x-3">
@@ -92,16 +92,16 @@ const Experience: React.FC = () => {
                             {getIcon(experience.type)}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-lg md:text-xl font-bold text-white leading-tight">
+                            <h3 className="text-base md:text-lg font-bold text-white leading-tight">
                               {experience.title}
                             </h3>
-                            <p className="text-primary-400 font-semibold text-sm md:text-base">
+                            <p className="text-primary-400 font-semibold text-sm">
                               {experience.company}
                             </p>
                           </div>
                         </div>
                         
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm text-neutral-400 mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-neutral-400 mb-4">
                           <div className="flex items-center">
                             <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
                             <span className="truncate">
@@ -124,11 +124,11 @@ const Experience: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1 md:space-y-2">
                       {experience.description.map((item, idx) => (
                         <div key={idx} className="flex items-start">
                           <div className="w-2 h-2 bg-primary-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                          <p className="text-neutral-300 text-sm md:text-base leading-relaxed">
+                          <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
                             {item}
                           </p>
                         </div>
@@ -142,12 +142,12 @@ const Experience: React.FC = () => {
                 variants={itemVariants}
                 className="text-center py-12 md:py-16"
               >
-                <div className="bg-neutral-900/50 rounded-xl md:rounded-2xl border border-neutral-700 p-6 md:p-8">
+                <div className="bg-neutral-900/50 rounded-lg md:rounded-xl border border-neutral-700 p-4 md:p-6">
                   <Building className="w-12 h-12 md:w-16 md:h-16 text-neutral-500 mx-auto mb-4" />
-                  <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+                  <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                     No Experience Added Yet
                   </h3>
-                  <p className="text-neutral-400 text-sm md:text-base">
+                  <p className="text-neutral-400 text-xs md:text-sm">
                     Experience and education information will appear here once added.
                   </p>
                 </div>

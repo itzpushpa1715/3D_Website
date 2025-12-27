@@ -48,41 +48,42 @@ const Certificates: React.FC = () => {
           {/* Certificates Grid */}
           <motion.div 
             variants={containerVariants}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8"
           >
             {certificates.map((certificate) => (
               <motion.div
                 key={certificate.id}
                 variants={itemVariants}
                 whileHover={{ y: -5, scale: 1.02 }}
-                className="bg-neutral-900/50 rounded-xl md:rounded-2xl border border-neutral-700 overflow-hidden hover:border-primary-500/50 transition-all duration-300 group"
+                className="bg-neutral-900/50 rounded-lg md:rounded-xl border border-neutral-700 overflow-hidden hover:border-primary-500/50 transition-all duration-300 group"
               >
-                <div className="aspect-video overflow-hidden bg-gradient-to-br from-primary-600/20 to-secondary-600/20">
+                <div className="aspect-video overflow-hidden bg-gradient-to-br from-primary-600/20 to-secondary-600/20 bg-neutral-700">
                   <img
                     src={certificate.image}
                     alt={certificate.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
                   />
                 </div>
                 
-                <div className="p-4 md:p-6">
+                <div className="p-3 md:p-4 lg:p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg md:text-xl font-bold text-white mb-2 group-hover:text-primary-400 transition-colors duration-200 line-clamp-2">
+                      <h3 className="text-base md:text-lg font-bold text-white mb-2 group-hover:text-primary-400 transition-colors duration-200 line-clamp-2">
                         {certificate.title}
                       </h3>
-                      <p className="text-primary-400 font-semibold mb-1 text-sm md:text-base">
+                      <p className="text-primary-400 font-semibold mb-1 text-sm">
                         {certificate.issuer}
                       </p>
                     </div>
-                    <div className="p-2 bg-primary-600/20 rounded-lg flex-shrink-0 ml-2">
-                      <Award className="w-4 h-4 md:w-5 md:h-5 text-primary-400" />
+                    <div className="p-1 md:p-2 bg-primary-600/20 rounded-lg flex-shrink-0 ml-2">
+                      <Award className="w-3 h-3 md:w-4 md:h-4 text-primary-400" />
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center text-xs md:text-sm text-neutral-400">
-                      <Calendar className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 flex-shrink-0" />
+                    <div className="flex items-center text-xs text-neutral-400">
+                      <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
                       <span className="truncate">
                         {new Date(certificate.date).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -100,7 +101,7 @@ const Certificates: React.FC = () => {
                         className="inline-flex items-center text-primary-400 hover:text-primary-300 transition-colors duration-200 flex-shrink-0 ml-2"
                       >
                         <ExternalLink className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                        <span className="text-xs md:text-sm">Verify</span>
+                        <span className="text-xs">Verify</span>
                       </a>
                     )}
                   </div>
@@ -114,17 +115,17 @@ const Certificates: React.FC = () => {
             variants={itemVariants}
             className="text-center mt-12 md:mt-16"
           >
-            <div className="bg-gradient-to-r from-primary-600/10 to-secondary-600/10 rounded-xl md:rounded-2xl border border-primary-500/20 p-6 md:p-8">
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-4">
+            <div className="bg-gradient-to-r from-primary-600/10 to-secondary-600/10 rounded-lg md:rounded-xl border border-primary-500/20 p-4 md:p-6">
+              <h3 className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4">
                 Continuous Learning
               </h3>
-              <p className="text-neutral-300 mb-4 md:mb-6 max-w-2xl mx-auto text-sm md:text-base">
+              <p className="text-neutral-300 mb-3 md:mb-4 max-w-2xl mx-auto text-xs md:text-sm px-2">
                 I'm constantly updating my skills and knowledge in the rapidly evolving fields 
                 of automation, robotics, and software development. Stay tuned for more certifications!
               </p>
               <div className="flex justify-center">
-                <div className="inline-flex items-center px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg text-sm md:text-base">
-                  <Award className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                <div className="inline-flex items-center px-3 md:px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg text-xs md:text-sm">
+                  <Award className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   More certifications coming soon
                 </div>
               </div>

@@ -165,7 +165,23 @@ const About: React.FC = () => {
                   <h3 className="text-lg md:text-xl font-semibold text-white dark:text-white mb-4 text-center">
                     Interactive Skills Workspace
                   </h3>
-                  <About3DWorkspace />
+                  <div className="hidden md:block">
+                    <About3DWorkspace />
+                  </div>
+                  <div className="md:hidden">
+                    <div className="grid grid-cols-2 gap-3">
+                      {profile.skills.slice(0, 6).map((skill, index) => (
+                        <div
+                          key={skill}
+                          className="bg-neutral-700/50 rounded-lg p-3 text-center border border-neutral-600"
+                        >
+                          <div className="text-sm font-semibold text-white">
+                            {skill}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
