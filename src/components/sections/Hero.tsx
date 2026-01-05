@@ -82,20 +82,24 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="mb-6 md:mb-8"
+              className="mb-6 md:mb-8 flex justify-center"
             >
-              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mx-auto rounded-full overflow-hidden border-4 border-primary-500 shadow-lg shadow-primary-500/25 animate-glow">
-                <img
-                  key={`hero-${imageKey}`}
-                  src={profileImageUrl}
-                  alt={profile.name}
-                  className="w-full h-full object-cover"
-                  onLoad={() => console.log('Hero image loaded:', profileImageUrl)}
-                  onError={(e) => {
-                    console.error('Hero image failed to load:', profileImageUrl);
-                    (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
-                  }}
-                />
+              <div className="relative">
+                <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden border-4 border-primary-500 shadow-2xl shadow-primary-500/30 animate-glow">
+                  <img
+                    key={`hero-${imageKey}`}
+                    src={profileImageUrl}
+                    alt={profile.name}
+                    className="w-full h-full object-cover object-center"
+                    onLoad={() => console.log('Hero image loaded:', profileImageUrl)}
+                    onError={(e) => {
+                      console.error('Hero image failed to load:', profileImageUrl);
+                      (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg';
+                    }}
+                  />
+                </div>
+                {/* Decorative ring */}
+                <div className="absolute inset-0 rounded-full border-2 border-primary-400/20 animate-pulse" style={{ animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
               </div>
             </motion.div>
 

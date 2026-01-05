@@ -110,22 +110,9 @@ const Navigation: React.FC = () => {
               </div>
             </div>
 
-            {/* Theme Toggle & Admin */}
+            {/* Theme Toggle */}
             <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
               <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={toggleTheme}
-                className="p-2 rounded-lg bg-neutral-800 dark:bg-neutral-800 hover:bg-neutral-700 dark:hover:bg-neutral-700 transition-colors duration-200"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-yellow-400" />
-                ) : (
-                  <Moon className="w-4 h-4 text-blue-400" />
-                )}
-              </motion.button>
-              
-              <motion.a
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={toggleTheme}
