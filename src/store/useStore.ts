@@ -403,16 +403,14 @@ export const useStore = create<Store>()(
             isLoading: false,
             lastUpdateTime: Date.now(),
           });
-          // Small delay to show loading screen briefly
-          await new Promise(resolve => setTimeout(resolve, 500));
           return;
         }
 
         try {
           const { data, error } = await supabase
             .from('portfolio_data')
-            .select('*')
-            .order('updated_at', { ascending: false });
+            .select('data_type, content, updated_at')
+            .limit(10);
 
           if (error) {
             console.error('Error loading data:', error);
@@ -485,8 +483,6 @@ export const useStore = create<Store>()(
             footer: defaultData.footer,
             lastUpdateTime: Date.now(),
           });
-          // Small delay to show loading screen briefly
-          await new Promise(resolve => setTimeout(resolve, 500));
         } finally {
           set({ isLoading: false });
         }

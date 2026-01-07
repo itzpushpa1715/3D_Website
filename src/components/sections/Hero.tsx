@@ -66,15 +66,15 @@ const Hero: React.FC = () => {
       <div className="absolute inset-0 z-0 hidden lg:block">
         <Scene3D />
       </div>
-      
+
       {/* Mobile Background Gradient */}
       <div className="absolute inset-0 z-0 lg:hidden bg-gradient-to-br from-primary-900/20 via-neutral-900 to-secondary-900/20"></div>
-      
+
       {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/30 z-10"></div>
-      
+      <div className="absolute inset-0 bg-black/30 z-0"></div>
+
       {/* Content */}
-      <div className="relative z-20 flex items-center justify-center min-h-screen">
+      <div className="relative z-10 flex items-center justify-center min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             {/* Profile Image */}
@@ -82,9 +82,9 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="mb-6 md:mb-8 flex justify-center"
+              className="mb-6 md:mb-8 flex justify-center relative z-0"
             >
-              <div className="relative">
+              <div className="relative z-0">
                 <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden border-4 border-primary-500 shadow-2xl shadow-primary-500/30 animate-glow">
                   <img
                     key={`hero-${imageKey}`}
