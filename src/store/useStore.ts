@@ -93,6 +93,7 @@ interface Store {
   // Contact Messages
   contactMessages: ContactMessage[];
   addContactMessage: (message: Omit<ContactMessage, 'id' | 'date'>) => Promise<void>;
+  deleteContactMessage: (id: string) => Promise<void>;
 
   // Profile
   profile: {
@@ -588,12 +589,18 @@ export const useStore = create<Store>()(
       // Contact Messages
       contactMessages: defaultData.contactMessages,
       addContactMessage: async (message) => {
-        const newMessage = { 
-          ...message, 
+        const newMessage = {
+          ...message,
           id: Date.now().toString(),
           date: new Date().toISOString()
         };
         const newMessages = [...get().contactMessages, newMessage];
+        set({ contactMessages: newMessages });
+        await get().saveToDatabase('contactMessages', newMessages);
+      },
+
+      deleteContactMessage: async (id) => {
+        const newMessages = get().contactMessages.filter(m => m.id !== id);
         set({ contactMessages: newMessages });
         await get().saveToDatabase('contactMessages', newMessages);
       },

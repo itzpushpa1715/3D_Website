@@ -5,15 +5,15 @@ import { useStore } from '../../store/useStore';
 import { uploadImage, deleteImage } from '../../lib/supabase';
 
 const AdminPanel: React.FC = () => {
-  const { 
-    projects, 
-    certificates, 
-    experiences, 
-    contactMessages, 
+  const {
+    projects,
+    certificates,
+    experiences,
+    contactMessages,
     profile,
     footer,
-    addProject, 
-    updateProject, 
+    addProject,
+    updateProject,
     deleteProject,
     addCertificate,
     updateCertificate,
@@ -24,7 +24,8 @@ const AdminPanel: React.FC = () => {
     updateProfile,
     updateFooter,
     logout,
-    changePassword
+    changePassword,
+    deleteContactMessage
   } = useStore();
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -32,6 +33,7 @@ const AdminPanel: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [addFormType, setAddFormType] = useState<'project' | 'certificate' | 'experience'>('project');
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -344,23 +346,139 @@ const AdminPanel: React.FC = () => {
             </div>
           </div>
         );
+      case 'certificates':
+        return (
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h3 className="text-lg md:text-xl font-semibold text-white">Certificates ({certificates.length})</h3>
+              <button
+                onClick={() => {
+                  setAddFormType('certificate');
+                  setShowAddForm(true);
+                }}
+                className="inline-flex items-center px-3 md:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200 text-sm md:text-base"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Certificate
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:gap-6">
+              {certificates.map((cert) => (
+                <div key={cert.id} className="bg-neutral-800 rounded-lg p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <h4 className="text-base md:text-lg font-semibold text-white mb-2">{cert.title}</h4>
+                      <p className="text-neutral-400 text-sm mb-2">Issued by {cert.issuer}</p>
+                      <p className="text-neutral-500 text-xs">{new Date(cert.date).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => setEditingItem({ ...cert, type: 'certificate' })}
+                        className="p-2 text-neutral-400 hover:text-white transition-colors duration-200"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Delete this certificate?')) {
+                            deleteCertificate(cert.id);
+                          }
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'experience':
+        return (
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h3 className="text-lg md:text-xl font-semibold text-white">Experience ({experiences.length})</h3>
+              <button
+                onClick={() => {
+                  setAddFormType('experience');
+                  setShowAddForm(true);
+                }}
+                className="inline-flex items-center px-3 md:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200 text-sm md:text-base"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Experience
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:gap-6">
+              {experiences.map((exp) => (
+                <div key={exp.id} className="bg-neutral-800 rounded-lg p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <h4 className="text-base md:text-lg font-semibold text-white mb-1">{exp.title}</h4>
+                      <p className="text-neutral-400 text-sm mb-1">{exp.company}</p>
+                      <p className="text-neutral-500 text-xs mb-2">{exp.location}</p>
+                      <p className="text-neutral-500 text-xs">
+                        {new Date(exp.startDate).toLocaleDateString()} - {exp.current ? 'Present' : new Date(exp.endDate || '').toLocaleDateString()}
+                      </p>
+                      {exp.current && <span className="inline-block mt-2 px-2 py-1 bg-green-600/20 text-green-300 text-xs rounded">Current</span>}
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => setEditingItem({ ...exp, type: 'experience' })}
+                        className="p-2 text-neutral-400 hover:text-white transition-colors duration-200"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Delete this experience?')) {
+                            deleteExperience(exp.id);
+                          }
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
       case 'messages':
         return (
           <div className="space-y-4 md:space-y-6">
             <h3 className="text-lg md:text-xl font-semibold text-white">Contact Messages ({contactMessages.length})</h3>
-            
+
             <div className="space-y-4">
               {contactMessages.length > 0 ? (
                 contactMessages.map((message) => (
                   <div key={message.id} className="bg-neutral-800 rounded-lg p-4 md:p-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-4">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-base md:text-lg font-semibold text-white">{message.name}</h4>
                         <p className="text-neutral-400 text-sm">{message.email}</p>
                       </div>
-                      <span className="text-xs text-neutral-500">
-                        {new Date(message.date).toLocaleDateString()}
-                      </span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-neutral-500">
+                          {new Date(message.date).toLocaleDateString()}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (confirm('Delete this message?')) {
+                              deleteContactMessage(message.id);
+                            }
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 transition-colors duration-200"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     <h5 className="text-sm md:text-base font-medium text-white mb-2">{message.subject}</h5>
                     <p className="text-neutral-300 text-sm leading-relaxed">{message.message}</p>
@@ -464,6 +582,388 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const renderAddForm = () => {
+    if (addFormType === 'project') {
+      return (
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          const data = Object.fromEntries(formData.entries());
+
+          const projectData = {
+            title: data.title as string,
+            description: data.description as string,
+            shortDescription: data.shortDescription as string,
+            image: data.image as string,
+            images: (data.images as string).split(',').map(s => s.trim()).filter(Boolean),
+            technologies: (data.technologies as string).split(',').map(s => s.trim()).filter(Boolean),
+            liveUrl: data.liveUrl as string,
+            githubUrl: data.githubUrl as string,
+            category: data.category as string,
+            featured: (data.featured as unknown) === 'on',
+            date: data.date as string,
+          };
+
+          if (editingItem) {
+            await updateProject(editingItem.id, projectData);
+            alert('Project updated!');
+          } else {
+            await addProject(projectData);
+            alert('Project added!');
+          }
+
+          setShowAddForm(false);
+          setEditingItem(null);
+        }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Title</label>
+            <input
+              name="title"
+              defaultValue={editingItem?.title || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Short Description</label>
+            <input
+              name="shortDescription"
+              defaultValue={editingItem?.shortDescription || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Description</label>
+            <textarea
+              name="description"
+              defaultValue={editingItem?.description || ''}
+              rows={3}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none resize-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Image URL</label>
+            <input
+              name="image"
+              defaultValue={editingItem?.image || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Additional Images (comma-separated)</label>
+            <input
+              name="images"
+              defaultValue={editingItem?.images?.join(', ') || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Technologies (comma-separated)</label>
+            <input
+              name="technologies"
+              defaultValue={editingItem?.technologies?.join(', ') || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">Live URL</label>
+              <input
+                name="liveUrl"
+                defaultValue={editingItem?.liveUrl || ''}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">GitHub URL</label>
+              <input
+                name="githubUrl"
+                defaultValue={editingItem?.githubUrl || ''}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">Category</label>
+              <input
+                name="category"
+                defaultValue={editingItem?.category || ''}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">Date</label>
+              <input
+                name="date"
+                type="date"
+                defaultValue={editingItem?.date || ''}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="flex items-center gap-2 text-neutral-300">
+              <input
+                name="featured"
+                type="checkbox"
+                defaultChecked={editingItem?.featured || false}
+                className="w-4 h-4"
+              />
+              Featured
+            </label>
+          </div>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
+            >
+              {editingItem ? 'Update' : 'Add'} Project
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingItem(null);
+              }}
+              className="flex-1 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors duration-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      );
+    } else if (addFormType === 'certificate') {
+      return (
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          const data = Object.fromEntries(formData.entries());
+
+          const certData = {
+            title: data.title as string,
+            issuer: data.issuer as string,
+            date: data.date as string,
+            image: data.image as string,
+            credentialUrl: data.credentialUrl as string,
+          };
+
+          if (editingItem) {
+            await updateCertificate(editingItem.id, certData);
+            alert('Certificate updated!');
+          } else {
+            await addCertificate(certData);
+            alert('Certificate added!');
+          }
+
+          setShowAddForm(false);
+          setEditingItem(null);
+        }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Title</label>
+            <input
+              name="title"
+              defaultValue={editingItem?.title || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Issuer</label>
+            <input
+              name="issuer"
+              defaultValue={editingItem?.issuer || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Date</label>
+            <input
+              name="date"
+              type="date"
+              defaultValue={editingItem?.date || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Image URL</label>
+            <input
+              name="image"
+              defaultValue={editingItem?.image || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Credential URL</label>
+            <input
+              name="credentialUrl"
+              defaultValue={editingItem?.credentialUrl || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
+            >
+              {editingItem ? 'Update' : 'Add'} Certificate
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingItem(null);
+              }}
+              className="flex-1 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors duration-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      );
+    } else if (addFormType === 'experience') {
+      return (
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          const data = Object.fromEntries(formData.entries());
+
+          const expData = {
+            title: data.title as string,
+            company: data.company as string,
+            location: data.location as string,
+            startDate: data.startDate as string,
+            endDate: data.endDate as string,
+            current: (data.current as unknown) === 'on',
+            description: (data.description as string).split('\n').filter(Boolean),
+            type: data.type as 'work' | 'education' | 'internship',
+          };
+
+          if (editingItem) {
+            await updateExperience(editingItem.id, expData);
+            alert('Experience updated!');
+          } else {
+            await addExperience(expData);
+            alert('Experience added!');
+          }
+
+          setShowAddForm(false);
+          setEditingItem(null);
+        }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Title</label>
+            <input
+              name="title"
+              defaultValue={editingItem?.title || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Company</label>
+            <input
+              name="company"
+              defaultValue={editingItem?.company || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Location</label>
+            <input
+              name="location"
+              defaultValue={editingItem?.location || ''}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">Start Date</label>
+              <input
+                name="startDate"
+                type="date"
+                defaultValue={editingItem?.startDate || ''}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">End Date</label>
+              <input
+                name="endDate"
+                type="date"
+                defaultValue={editingItem?.endDate || ''}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-300 mb-2">Type</label>
+              <select
+                name="type"
+                defaultValue={editingItem?.type || 'work'}
+                className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none"
+              >
+                <option value="work">Work</option>
+                <option value="education">Education</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-neutral-300">
+                <input
+                  name="current"
+                  type="checkbox"
+                  defaultChecked={editingItem?.current || false}
+                  className="w-4 h-4"
+                />
+                Currently Working
+              </label>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">Description (one per line)</label>
+            <textarea
+              name="description"
+              defaultValue={editingItem?.description?.join('\n') || ''}
+              rows={4}
+              className="w-full px-4 py-2 bg-neutral-900 border border-neutral-600 rounded-lg text-white focus:border-primary-500 focus:outline-none resize-none"
+              required
+            />
+          </div>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors duration-200"
+            >
+              {editingItem ? 'Update' : 'Add'} Experience
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setEditingItem(null);
+              }}
+              className="flex-1 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors duration-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-neutral-900 flex">
       {/* Mobile Sidebar Overlay */}
@@ -555,6 +1055,48 @@ const AdminPanel: React.FC = () => {
           {renderContent()}
         </main>
       </div>
+
+      {/* Add/Edit Modal */}
+      <AnimatePresence>
+        {(showAddForm || editingItem) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => {
+              setShowAddForm(false);
+              setEditingItem(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-neutral-800 rounded-lg p-6 w-full max-w-2xl max-h-96 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-white">
+                  {editingItem
+                    ? `Edit ${editingItem.type || addFormType}`
+                    : `Add New ${addFormType}`}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setEditingItem(null);
+                  }}
+                  className="p-2 text-neutral-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {renderAddForm()}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
